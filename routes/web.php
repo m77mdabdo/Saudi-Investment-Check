@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AnalyticsController;
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\CmsController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\EmailLogController;
 use App\Http\Controllers\Admin\EventController;
 use App\Http\Controllers\Admin\GoogleAuthController;
 use App\Http\Controllers\Admin\LeadController;
@@ -14,6 +15,8 @@ use App\Http\Controllers\Admin\QuizBuilderController;
 use App\Http\Controllers\Admin\ResultRuleController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\LanguageController;
+use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\Public\LandingController;
 use App\Http\Controllers\Public\QuizController;
 use Illuminate\Support\Facades\Route;
@@ -22,21 +25,46 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 | Public journey — QR ▸ landing ▸ quiz ▸ lead ▸ result
 |--------------------------------------------------------------------------
+| Arabic (the default locale) keeps the original un-prefixed URLs so every
+| QR code and indexed link already in the wild keeps working. English is
+| served from /en/… so each language has its own canonical URL for hreflang.
 */
 
-Route::get('/', LandingController::class)->name('landing');
+$publicRoutes = function () {
+    Route::get('/', LandingController::class)->name('landing');
+    Route::get('/quiz', [QuizController::class, 'show'])->name('quiz');
+    Route::get('/result/{lead}', [QuizController::class, 'result'])->name('result');
+};
 
-Route::get('/quiz', [QuizController::class, 'show'])->name('quiz');
+// English
+Route::prefix('en')->name('en.')->group($publicRoutes);
+
+// Arabic (default — no prefix)
+Route::group([], $publicRoutes);
+
+// /ar/... is accepted as an alias and redirects to the canonical Arabic URL.
+Route::get('/ar/{path?}', function (?string $path = null) {
+    return redirect('/'.ltrim((string) $path, '/'), 301);
+})->where('path', '.*')->name('ar.alias');
+
+// Locale-agnostic endpoints (no SEO surface): the language comes from the
+// session/referer via the SetLocale middleware.
 Route::post('/quiz/state', [QuizController::class, 'sync'])->middleware('throttle:quiz-state')->name('quiz.sync');
 Route::post('/quiz/progress', [QuizController::class, 'progress'])->middleware('throttle:quiz-state')->name('quiz.progress');
 Route::post('/quiz/completed', [QuizController::class, 'completed'])->middleware('throttle:quiz-state')->name('quiz.completed');
 Route::post('/quiz/submit', [QuizController::class, 'submit'])->middleware('throttle:quiz-submit')->name('quiz.submit');
-Route::get('/result/{lead}', [QuizController::class, 'result'])->name('result');
 Route::post('/track', [QuizController::class, 'track'])->middleware('throttle:tracking')->name('track');
+
+// Language switcher: /language/en?redirect=/en/quiz
+Route::get('/language/{locale}', LanguageController::class)
+    ->where('locale', implode('|', \App\Support\Locale::supported()))
+    ->name('language.switch');
+
+Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
 
 // Short QR entry points: /qr/booth_qr → landing with attribution preserved.
 Route::get('/qr/{slug}', function (string $slug) {
-    return redirect()->route('landing', ['source' => $slug]);
+    return redirect()->to(lroute('landing', ['source' => $slug]));
 })->where('slug', '[a-z0-9_\-]+')->name('qr.entry');
 
 /*
@@ -67,6 +95,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::delete('leads/{lead}', [LeadController::class, 'destroy'])->name('leads.destroy');
 
         Route::get('analytics', AnalyticsController::class)->name('analytics');
+
+        // Reading the log is operational; sending mail from it is not.
+        Route::get('emails', [EmailLogController::class, 'index'])->name('emails.index');
+        Route::post('emails/test', [EmailLogController::class, 'test'])
+            ->middleware(['admin.manage', 'throttle:10,1'])->name('emails.test');
+        Route::post('emails/{log}/resend', [EmailLogController::class, 'resend'])
+            ->middleware(['admin.manage', 'throttle:20,1'])->name('emails.resend');
 
         Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
         Route::post('notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');

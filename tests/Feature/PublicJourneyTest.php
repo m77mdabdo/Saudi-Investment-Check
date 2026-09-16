@@ -231,7 +231,8 @@ class PublicJourneyTest extends TestCase
         $this->submitQuiz();
         $lead = $this->latestLead();
 
-        Mail::assertSent(\App\Mail\TemplatedMail::class, 2);
+        Mail::assertSent(\App\Mail\NewLeadMail::class, 1);
+        Mail::assertSent(\App\Mail\LeadResultMail::class, 1);
 
         $this->assertDatabaseHas('notification_logs', ['lead_id' => $lead->id, 'template_key' => 'admin_new_lead', 'status' => 'sent']);
         $this->assertDatabaseHas('notification_logs', ['lead_id' => $lead->id, 'template_key' => 'customer_result', 'status' => 'sent']);
@@ -242,6 +243,7 @@ class PublicJourneyTest extends TestCase
     {
         $this->submitQuiz(['email' => null]);
 
-        Mail::assertSent(\App\Mail\TemplatedMail::class, 1);
+        Mail::assertSent(\App\Mail\NewLeadMail::class, 1);
+        Mail::assertNotSent(\App\Mail\LeadResultMail::class);
     }
 }

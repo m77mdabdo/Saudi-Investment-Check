@@ -28,7 +28,7 @@
 
         <div><label class="ad-label" for="description">الوصف</label><textarea id="description" name="description" class="ad-textarea" rows="3">{{ old('description', $event->description) }}</textarea></div>
 
-        <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="is_default" value="1" class="h-4 w-4 accent-[#d9a742]" @checked(old('is_default', $event->is_default))> الفعالية الافتراضية للـleads الجديدة</label>
+        <label class="ad-check text-sm"><input type="checkbox" name="is_default" value="1" class="accent-[#d9a742]" @checked(old('is_default', $event->is_default))> الفعالية الافتراضية للـleads الجديدة</label>
 
         @if ($event->logo_path)
             <img src="{{ asset('storage/'.$event->logo_path) }}" alt="" class="h-16 w-auto rounded-lg border border-line">

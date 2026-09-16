@@ -1,0 +1,33 @@
+<?php
+
+return [
+    'title' => 'التقييم',
+    'intro' => 'اختار الإجابة الأقرب لوضع شركتك — مفيش إجابة غلط.',
+    'step' => 'السؤال :current من :total',
+    'last_step' => 'الخطوة الأخيرة',
+    'progress_label' => 'تقدّم التقييم',
+    'next' => 'التالي',
+    'previous' => 'السابق',
+    'finish' => 'خلصنا، النتيجة',
+    'pick_to_continue' => 'اختار إجابة عشان تكمل 👆',
+    'detail_placeholder' => 'اكتب التفاصيل',
+    'lead_headline' => 'تمام... إحنا تقريبًا عرفنا أنت واقف فين 👀',
+    'lead_text' => 'سيب بياناتك ونطلع لك نتيجة الـSaudi-Ready Check.',
+    'lead_cta' => 'اعرف نتيجتك',
+    'lead_submitting' => 'لحظة بنجهز النتيجة...',
+    'consent' => 'أوافق على تواصل فريق Creative Mark معي بخصوص نتيجة التقييم وخيارات دخول السوق السعودي.',
+    'privacy_note' => 'بياناتك بتُستخدم للتواصل بخصوص التقييم فقط.',
+    'country_search' => 'ابحث عن دولة...',
+    'country_label' => 'اختار كود الدولة',
+    'unavailable' => 'التقييم مش متاح حاليًا.',
+    'fields' => [
+        'name' => 'الاسم',
+        'name_placeholder' => 'اسمك بالكامل',
+        'company' => 'اسم الشركة',
+        'company_placeholder' => 'اسم شركتك',
+        'whatsapp' => 'رقم الواتساب',
+        'whatsapp_placeholder' => '5xxxxxxxx',
+        'email' => 'البريد الإلكتروني',
+        'email_placeholder' => 'name@company.com',
+    ],
+];

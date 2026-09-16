@@ -10,7 +10,7 @@
         @if ($events->isEmpty())
             <x-admin.empty icon="📅" title="مفيش فعاليات" text="ابدأ بإضافة فعالية TECHNE." cta-label="فعالية جديدة" :cta-url="route('admin.events.create')" />
         @else
-            <table class="ad-table">
+            <div class="ad-table-wrap"><table class="ad-table">
                 <thead><tr><th>الاسم</th><th>المدينة</th><th>التواريخ</th><th>الحالة</th><th>Leads</th><th></th></tr></thead>
                 <tbody>
                     @foreach ($events as $event)
@@ -29,7 +29,7 @@
                         </tr>
                     @endforeach
                 </tbody>
-            </table>
+            </table></div>
         @endif
     </div>
 </x-layouts.admin>

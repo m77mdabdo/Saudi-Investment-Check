@@ -25,6 +25,7 @@ QR ▸ Landing ▸ 8 questions ▸ Lead form ▸ Server-side score ▸ Result + 
 | Database | MySQL 8 (SQLite in-memory for tests) |
 | Mail | Laravel Mail over SMTP |
 | Auth | Session auth + optional Google OAuth (Socialite), staff only |
+| Languages | Arabic (default, RTL) + English (`/en`, LTR) via Laravel localization |
 | Export | Laravel Excel (`maatwebsite/excel`) |
 | Imagery | Pexels API, cached in the database, with bundled local fallbacks |
 
@@ -67,7 +68,8 @@ Every integration degrades gracefully when its variables are absent.
 | Group | Variables | Notes |
 | --- | --- | --- |
 | App | `APP_*`, `DB_*`, `SESSION_*`, `CACHE_STORE`, `QUEUE_CONNECTION` | Standard Laravel |
-| Mail | `MAIL_MAILER`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_ENCRYPTION`, `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME` | Lead + customer emails |
+| Mail | `MAIL_MAILER`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_ENCRYPTION`, `MAIL_TIMEOUT`, `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME` | Lead + customer emails. Keep **one** `MAIL_*` block — a duplicate key later in `.env` silently wins |
+| Languages | `APP_LOCALE=ar`, `APP_FALLBACK_LOCALE=ar`, `LOCALE_AUTO_DETECT` | Arabic default, English at `/en` |
 | Pexels | `PEXELS_API_KEY`, `PEXELS_CACHE_TTL`, `PEXELS_TIMEOUT` | Missing key → bundled fallback images |
 | Google OAuth | `OAUTH_PROVIDERS`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL`, `GOOGLE_ALLOWED_DOMAINS`, `GOOGLE_AUTO_REGISTER` | Staff sign-in only; hidden when unset |
 | CTA links | `CREATIVE_MARK_WHATSAPP_URL`, `BOOKING_URL`, `CHECKLIST_URL`, `CREATIVE_MARK_PHONE`, `CREATIVE_MARK_EMAIL`, `CREATIVE_MARK_WEBSITE` | Defaults; Admin → Settings overrides them |
@@ -78,6 +80,62 @@ Every integration degrades gracefully when its variables are absent.
 **Secrets live in `.env` only.** They are read through `config/services.php`,
 `config/mail.php` and `config/creativemark.php`, never hard-coded, never sent to the browser,
 and `.env` is git-ignored.
+
+---
+
+## Languages (Arabic + English)
+
+Arabic is the default and keeps the **original, un-prefixed URLs**, so every QR code and
+indexed link keeps working. English is served from `/en/…`, giving each language its own
+canonical URL for `hreflang`.
+
+```
+/            /quiz            /result/{uuid}      ← Arabic (RTL)
+/en          /en/quiz         /en/result/{uuid}   ← English (LTR)
+/ar/…  → 301 → the Arabic URL
+```
+
+* **Interface strings** live in `lang/ar/*.php` and `lang/en/*.php`
+  (`common`, `home`, `quiz`, `results`, `forms`, `validation`, `emails`, `admin`, `seo`, `errors`).
+* **Editable content** (quiz questions, options, result rules, CMS, sales statuses, email
+  subjects) keeps Arabic in its own columns and English in a `translations` JSON column,
+  through the `HasTranslations` trait — seed or edit it from the admin.
+* The language is resolved by the **URL first**, then the form's hidden `locale` field, then
+  session/cookie. Browser auto-detection is off by default (`LOCALE_AUTO_DETECT`).
+* The switcher (`/language/{locale}?redirect=…`) only ever redirects to same-origin paths.
+* Emails are written in the language the lead used; internal sales alerts follow the
+  `admin_email_locale` setting.
+
+---
+
+## Email
+
+Every message is sent **immediately** (no queue worker to depend on) through
+`App\Services\NotificationService`, which writes the outcome to `notification_logs` and can
+never break the visitor's request.
+
+| Message | To | When |
+| --- | --- | --- |
+| `customer_result` | The lead | On submission, if they gave an email and the setting is on |
+| `admin_new_lead` | Sales recipients | On every submission |
+| `lead_status_update` | The lead | When their status reaches one flagged **notify client** |
+| `test` | Anyone you choose | `php artisan email:test` or Admin → Email logs |
+
+Templates are Blade (`resources/views/emails/…`) built on a table-based, inline-CSS layout
+that renders in Gmail, Outlook and Apple Mail, adapts to phones, and flips RTL/LTR with the
+language. Subject lines stay editable per language in Admin → Email templates.
+
+### When mail does not arrive
+
+```bash
+php artisan email:diagnose            # config, settings, live SMTP probe, problems found
+php artisan email:test you@example.com --locale=ar
+```
+
+The same report is on **Admin → Email logs**, together with every message sent, its status,
+the SMTP error when it failed, and a resend button. Common causes it detects: `MAIL_MAILER=log`,
+a stale `bootstrap/cache/config.php`, missing SMTP credentials, notifications switched off,
+no recipients configured, and a host blocking outbound SMTP ports.
 
 ---
 
@@ -113,7 +171,8 @@ no deployment required.
 | **Events** | Multiple events, default event, dates, status; every lead belongs to one |
 | **QR Sources** | Create tracked sources, copy their URL, see leads and hot leads per source |
 | **Email templates** | Subject/body with `{{name}}`, `{{company}}`, `{{score}}`, `{{result}}`, `{{classification}}`, `{{source}}`, `{{event}}`, `{{main_question}}`, `{{cta_url}}`… plus send-preview and logs |
-| **Settings** | CTA links, notification recipients and toggles, sales statuses, integration health |
+| **Email logs** | Mail health (config + live SMTP probe), every message with status/error, resend, send a test email |
+| **Settings** | CTA links, notification recipients and toggles, sales statuses (incl. *notify client*), integration health |
 | **Users & Roles** | Create staff, change roles, deactivate accounts |
 
 ### QR sources
@@ -158,13 +217,26 @@ with foreign keys and indexes on the columns the dashboard filters by.
 php artisan test
 ```
 
-71 tests covering the public journey, scoring boundaries (12/9/8/5/4/0), validation,
-duplicate submissions, QR/UTM attribution, analytics, notifications, media fallbacks,
-security, authorization, and every admin workflow.
+103 tests covering the public journey, scoring boundaries (12/9/8/5/4/0), validation,
+duplicate submissions, QR/UTM attribution, analytics, media fallbacks, security,
+authorization, every admin workflow, both languages (routing, content, SEO tags, switcher,
+persistence) and the whole email system (delivery, tracking, RTL/LTR rendering, failure
+isolation, diagnostics, permissions).
 
 ---
 
 ## Deployment
+
+**Read [DEPLOYMENT.md](DEPLOYMENT.md) first.** The domain is served from the Laravel project
+root (not from `public/`), so the tracked root `.htaccess` is what keeps the site from
+answering 403 — and what keeps `.env` from being downloadable. `public/build` and the
+`public/storage` symlink are committed on purpose, because the server has no Node step.
+
+Verify any deployment with:
+
+```bash
+./scripts/verify-production.sh https://investment.dareljamila.com
+```
 
 ```bash
 composer install --no-dev --optimize-autoloader
@@ -173,7 +245,11 @@ php artisan migrate --force
 php artisan storage:link
 php artisan config:cache && php artisan route:cache && php artisan view:cache
 php artisan media:sync          # optional
+php artisan email:diagnose      # confirm mail works on the server itself
 ```
+
+`php artisan db:seed --class=EnglishContentSeeder` is idempotent and only fills the English
+side of the content — safe to run on production after deploying.
 
 Point the web root at `public/`, set `APP_ENV=production`, `APP_DEBUG=false`, and run
 `php artisan queue:work` if you switch mail to a queued connection.

@@ -12,6 +12,7 @@ use App\Models\QuizOption;
 use App\Models\SalesStatus;
 use App\Models\User;
 use App\Services\LeadQuery;
+use App\Services\NotificationService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -21,7 +22,10 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class LeadController extends Controller
 {
-    public function __construct(protected LeadQuery $leadQuery) {}
+    public function __construct(
+        protected LeadQuery $leadQuery,
+        protected NotificationService $notifications,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -66,7 +70,9 @@ class LeadController extends Controller
         if ($data['sales_status'] !== $lead->sales_status) {
             $from = $lead->statusMeta()?->label ?? $lead->sales_status;
             $lead->update(['sales_status' => $data['sales_status'], 'status_changed_at' => now()]);
-            $to = $lead->statusMeta()?->label ?? $lead->sales_status;
+            $lead->refresh();
+            $status = $lead->statusMeta();
+            $to = $status?->label ?? $lead->sales_status;
 
             LeadNote::create([
                 'lead_id' => $lead->id,
@@ -74,9 +80,23 @@ class LeadController extends Controller
                 'type' => 'status',
                 'body' => "Status: {$from} → {$to}",
             ]);
+
+            // Statuses flagged as client-facing trigger an email to the lead.
+            if ($status && $status->notify_client) {
+                $notified = $this->notifications->leadStatusChanged($lead, $status);
+
+                if ($notified) {
+                    LeadNote::create([
+                        'lead_id' => $lead->id,
+                        'user_id' => $request->user()->id,
+                        'type' => 'system',
+                        'body' => __('admin.flash.status_email_sent', ['email' => $lead->email]),
+                    ]);
+                }
+            }
         }
 
-        return back()->with('success', 'تم تحديث حالة الـLead.');
+        return back()->with('success', __('admin.flash.status_updated'));
     }
 
     public function assign(Request $request, Lead $lead): RedirectResponse
@@ -94,7 +114,7 @@ class LeadController extends Controller
             'body' => $lead->owner ? 'Assigned to '.$lead->owner->name : 'Unassigned',
         ]);
 
-        return back()->with('success', 'تم تحديث المسؤول.');
+        return back()->with('success', __('admin.flash.owner_updated'));
     }
 
     public function storeNote(Request $request, Lead $lead): RedirectResponse
@@ -108,7 +128,7 @@ class LeadController extends Controller
             'body' => $data['body'],
         ]);
 
-        return back()->with('success', 'تمت إضافة الملاحظة.');
+        return back()->with('success', __('admin.flash.note_added'));
     }
 
     public function destroy(Request $request, Lead $lead): RedirectResponse
@@ -117,7 +137,7 @@ class LeadController extends Controller
 
         $lead->delete();
 
-        return redirect()->route('admin.leads.index')->with('success', 'تم حذف الـLead.');
+        return redirect()->route('admin.leads.index')->with('success', __('admin.flash.deleted'));
     }
 
     public function export(Request $request): BinaryFileResponse

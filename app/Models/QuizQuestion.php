@@ -3,22 +3,25 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
+use App\Support\HasTranslations;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class QuizQuestion extends Model
 {
-    use HasFactory;
+    use HasFactory, HasTranslations;
 
     public const TYPES = ['single', 'multiple', 'text', 'textarea'];
 
     protected $fillable = [
+        'translations',
         'key', 'type', 'title', 'subtitle', 'icon', 'placeholder',
         'is_required', 'is_scored', 'is_active', 'position', 'meta',
     ];
 
     protected $casts = [
+        'translations' => 'array',
         'is_required' => 'boolean',
         'is_scored' => 'boolean',
         'is_active' => 'boolean',

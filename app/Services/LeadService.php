@@ -8,6 +8,7 @@ use App\Models\QuizQuestion;
 use App\Models\SalesStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class LeadService
 {
@@ -78,7 +79,20 @@ class LeadService
                 ]);
             }
 
-            return $lead->fresh(['event', 'qrSource', 'rule', 'answers']);
+            $lead = $lead->fresh(['event', 'qrSource', 'rule', 'answers']);
+
+            // Operational trail — ids and outcome only, never contact details.
+            Log::info('lead.created', [
+                'lead_id' => $lead->id,
+                'score' => $lead->score,
+                'result' => $lead->result_key,
+                'locale' => $lead->locale,
+                'source' => $lead->source,
+                'event_id' => $lead->event_id,
+                'has_email' => (bool) $lead->email,
+            ]);
+
+            return $lead;
         });
     }
 

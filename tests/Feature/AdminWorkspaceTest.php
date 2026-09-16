@@ -248,13 +248,21 @@ class AdminWorkspaceTest extends TestCase
         $this->assertSame('', (string) Setting::query()->where('key', 'cta_booking_url')->value('value'));
     }
 
-    public function test_boolean_settings_can_be_switched_off(): void
+    public function test_boolean_settings_are_only_changed_when_submitted(): void
     {
         $this->actingAs($this->admin());
 
-        $this->put('/admin/settings', ['settings' => ['cta_booking_url' => '']])->assertRedirect();
+        // A form that does not render the toggle must never switch it off —
+        // this is what silently stopped the customer emails in production.
+        $this->put('/admin/settings', ['settings' => ['cta_booking_url' => 'https://example.com/book']])->assertRedirect();
+        $this->assertSame('1', Setting::query()->where('key', 'notify_customer')->value('value'));
 
+        // Submitting the explicit 0 (hidden input) does switch it off.
+        $this->put('/admin/settings', ['settings' => ['notify_customer' => '0']])->assertRedirect();
         $this->assertSame('0', Setting::query()->where('key', 'notify_customer')->value('value'));
+
+        $this->put('/admin/settings', ['settings' => ['notify_customer' => '1']])->assertRedirect();
+        $this->assertSame('1', Setting::query()->where('key', 'notify_customer')->value('value'));
     }
 
     public function test_qr_sources_can_be_created_and_track_leads(): void

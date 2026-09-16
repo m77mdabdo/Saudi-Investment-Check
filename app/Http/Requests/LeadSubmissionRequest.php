@@ -30,32 +30,15 @@ class LeadSubmissionRequest extends FormRequest
 
     public function attributes(): array
     {
+        // Attribute names (and all messages) come from lang/{locale}/validation.php
+        // so both languages are handled by the same rules.
         return [
-            'name' => 'الاسم',
-            'company' => 'اسم الشركة',
-            'phone' => 'رقم الواتساب',
-            'country_code' => 'كود الدولة',
-            'email' => 'البريد الإلكتروني',
-            'consent' => 'الموافقة',
-        ];
-    }
-
-    public function messages(): array
-    {
-        return [
-            'required' => 'من فضلك املأ :attribute.',
-            'in' => ':attribute غير صالح — اختار من القائمة.',
-            'max' => ':attribute طويل أوي.',
-            'country_code.in' => 'اختار كود الدولة من القائمة.',
-            'name.min' => 'اكتب اسمك كامل من فضلك.',
-            'company.required' => 'اكتب اسم الشركة من فضلك.',
-            'phone.required' => 'محتاجين رقم الواتساب عشان نبعتلك النتيجة.',
-            'phone.regex' => 'اكتب رقم واتساب صحيح (أرقام فقط).',
-            'phone.min' => 'الرقم قصير — راجعه من فضلك.',
-            'email.email' => 'البريد الإلكتروني مش مظبوط.',
-            'consent.accepted' => 'لازم توافق على التواصل عشان نطلعلك النتيجة.',
-            'answers.*.required' => 'في سؤال لسه مش مجاوب عليه — ارجع وكمّله.',
-            'answers.*.in' => 'في إجابة غير صالحة — ابدأ التقييم من جديد.',
+            'name' => __('validation.attributes.name'),
+            'company' => __('validation.attributes.company'),
+            'phone' => __('validation.attributes.phone'),
+            'country_code' => __('validation.attributes.country_code'),
+            'email' => __('validation.attributes.email'),
+            'consent' => __('validation.attributes.consent'),
         ];
     }
 

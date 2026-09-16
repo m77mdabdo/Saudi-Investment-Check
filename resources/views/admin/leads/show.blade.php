@@ -38,7 +38,7 @@
                     </div>
 
                     <div class="min-w-0 flex-1">
-                        <div class="flex flex-wrap items-center gap-2">
+                        <div class="ad-inline-form">
                             <x-admin.result-badge :lead="$lead" />
                             <x-admin.badge :color="$meta?->color ?? 'slate'">{{ $meta?->label ?? $lead->sales_status }}</x-admin.badge>
                             @if ($lead->event)<x-admin.badge color="slate">{{ $lead->event->name }}</x-admin.badge>@endif
@@ -56,7 +56,7 @@
 
             <section class="ad-card overflow-hidden">
                 <h2 class="border-b border-line px-5 py-3 text-sm font-black uppercase tracking-wider text-slate-400">Answers</h2>
-                <table class="ad-table">
+                <div class="ad-table-wrap"><table class="ad-table">
                     <thead><tr><th>السؤال</th><th>الإجابة</th><th>النقاط</th></tr></thead>
                     <tbody>
                         @foreach ($lead->answers as $answer)
@@ -72,7 +72,7 @@
                             </tr>
                         @endforeach
                     </tbody>
-                </table>
+                </table></div>
             </section>
 
             {{-- Activity timeline --}}

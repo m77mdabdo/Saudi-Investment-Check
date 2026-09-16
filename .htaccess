@@ -1,0 +1,56 @@
+# ═══════════════════════════════════════════════════════════════════════════
+#  Creative Mark — Saudi-Ready Check
+#  ROOT .htaccess  (lives in the Laravel project root = Hostinger public_html/)
+# ═══════════════════════════════════════════════════════════════════════════
+#
+#  WHY THIS FILE EXISTS
+#  The domain is served from the Laravel PROJECT ROOT, not from public/.
+#  Without this file the web server never reaches public/index.php, so the
+#  site answers 403 Forbidden (no index file + directory listing disabled)
+#  AND project files such as .env become downloadable.
+#
+#  DO NOT DELETE THIS FILE. DO NOT MOVE public/index.php TO THE ROOT.
+#  It is tracked in git so every deployment keeps it.
+# ═══════════════════════════════════════════════════════════════════════════
+
+# ── 1. Never list directory contents ──────────────────────────────────────
+Options -Indexes
+
+# ── 2. Block dotfiles (.env, .git, .htpasswd …) at the file level, so they
+#      stay protected even if mod_rewrite is unavailable. ──────────────────
+<IfModule mod_authz_core.c>
+    <FilesMatch "^\.">
+        Require all denied
+    </FilesMatch>
+</IfModule>
+<IfModule !mod_authz_core.c>
+    <FilesMatch "^\.">
+        Order allow,deny
+        Deny from all
+    </FilesMatch>
+</IfModule>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # ── 3. Refuse application directories and files outright. ─────────────
+    #      NOTE: /storage/... is deliberately NOT blocked — it is rewritten
+    #      into public/storage (the symlink) so uploaded media keeps working.
+    RewriteRule ^(app|bootstrap|config|database|lang|resources|routes|tests|vendor|node_modules)/ - [F,L]
+    RewriteRule ^(artisan|composer\.(json|lock)|package(-lock)?\.json|phpunit\.xml|vite\.config\.js|README\.md|DEPLOYMENT\.md)$ - [F,L]
+    RewriteRule (^|/)\.(env|git|github) - [F,L]
+
+    # ── 4. Send every remaining request into Laravel's public/ directory.
+    #      This is the rule that fixes the 403. Keep it last.
+    #
+    #      4a. A path that already points inside public/ is served as-is.
+    #          (Path-relative, so it behaves the same whether the project is the
+    #          domain root — as on Hostinger — or sits in a subdirectory.)
+    RewriteRule ^public/ - [L]
+
+    #      4b. Everything else is routed into public/.
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# ── 5. If mod_rewrite is missing, at least serve the front controller. ─────
+DirectoryIndex public/index.php index.php

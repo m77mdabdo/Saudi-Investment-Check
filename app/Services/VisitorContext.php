@@ -83,7 +83,9 @@ class VisitorContext
             'device' => $tablet ? 'tablet' : ($mobile ? 'mobile' : 'desktop'),
             'browser' => $browser,
             'platform' => $platform,
-            'locale' => substr((string) $request->getPreferredLanguage(), 0, 10),
+            // The language the visitor is actually using, so follow-up emails
+            // are written in the same language they took the quiz in.
+            'locale' => app()->getLocale(),
         ];
     }
 

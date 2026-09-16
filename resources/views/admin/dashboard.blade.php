@@ -156,7 +156,7 @@
                 <a href="{{ route('admin.leads.index', request()->query()) }}" class="text-sm font-bold text-slate-600 hover:text-slate-900">عرض الكل →</a>
             </div>
             <div class="overflow-x-auto">
-                <table class="ad-table">
+                <div class="ad-table-wrap"><table class="ad-table">
                     <thead>
                         <tr>
                             <th>Name</th><th>Company</th><th>Score</th><th>Result</th>
@@ -179,7 +179,7 @@
                             </tr>
                         @endforeach
                     </tbody>
-                </table>
+                </table></div>
             </div>
         </section>
 

@@ -12,6 +12,7 @@ class DatabaseSeeder extends Seeder
             PlatformSeeder::class,
             QuizSeeder::class,
             ResultRuleSeeder::class,
+            EnglishContentSeeder::class,
             AdminUserSeeder::class,
         ]);
     }

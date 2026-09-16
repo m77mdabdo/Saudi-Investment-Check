@@ -26,13 +26,13 @@
         </section>
 
         <section class="ad-card overflow-hidden lg:col-span-2">
-            <table class="ad-table">
+            <div class="ad-table-wrap"><table class="ad-table">
                 <thead><tr><th>المستخدم</th><th>الدور</th><th>Leads</th><th>آخر دخول</th><th></th></tr></thead>
                 <tbody>
                     @foreach ($users as $user)
                         <tr>
                             <td colspan="5" class="p-0">
-                                <form method="POST" action="{{ route('admin.users.update', $user) }}" class="flex flex-wrap items-center gap-2 px-3 py-2.5">
+                                <form method="POST" action="{{ route('admin.users.update', $user) }}" class="ad-inline-form px-3 py-2.5">
                                     @csrf @method('PUT')
                                     <input name="name" class="ad-input h-9 min-h-9 w-36 py-1 text-sm" value="{{ $user->name }}">
                                     <input name="email" class="ad-input h-9 min-h-9 w-52 py-1 text-sm" dir="ltr" value="{{ $user->email }}">
@@ -43,7 +43,7 @@
                                     </select>
                                     <input type="password" name="password" class="ad-input h-9 min-h-9 w-36 py-1 text-xs" placeholder="كلمة مرور جديدة" autocomplete="new-password">
                                     <input type="password" name="password_confirmation" class="ad-input h-9 min-h-9 w-36 py-1 text-xs" placeholder="تأكيد" autocomplete="new-password">
-                                    <label class="flex items-center gap-1 text-xs"><input type="checkbox" name="is_active" value="1" class="h-3.5 w-3.5 accent-[#d9a742]" @checked($user->is_active)> نشط</label>
+                                    <label class="ad-check"><input type="checkbox" name="is_active" value="1" class="accent-[#d9a742]" @checked($user->is_active)> نشط</label>
                                     <span class="text-xs text-slate-400">{{ $user->assigned_leads_count }} leads · {{ $user->last_login_at?->diffForHumans() ?? 'لم يدخل' }}</span>
                                     <button class="ad-btn ad-btn-dark ms-auto">حفظ</button>
                                 </form>
@@ -51,7 +51,7 @@
                         </tr>
                     @endforeach
                 </tbody>
-            </table>
+            </table></div>
         </section>
     </div>
 </x-layouts.admin>

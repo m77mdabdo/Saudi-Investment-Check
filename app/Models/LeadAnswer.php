@@ -24,4 +24,23 @@ class LeadAnswer extends Model
     {
         return $this->belongsTo(QuizQuestion::class, 'quiz_question_id');
     }
+
+    public function option(): BelongsTo
+    {
+        return $this->belongsTo(QuizOption::class, 'quiz_option_id');
+    }
+
+    /** Stored answer, translated when the option still exists. */
+    public function localizedAnswer(): ?string
+    {
+        if ($this->relationLoaded('option') || $this->quiz_option_id) {
+            $label = $this->option?->t('label');
+
+            if (filled($label)) {
+                return $label;
+            }
+        }
+
+        return $this->answer_label ?: $this->answer_text;
+    }
 }

@@ -2,20 +2,23 @@
 
 namespace App\Models;
 
+use App\Support\HasTranslations;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Event extends Model
 {
-    use HasFactory;
+    use HasFactory, HasTranslations;
 
     protected $fillable = [
+        'translations',
         'name', 'slug', 'city', 'country', 'starts_at', 'ends_at',
         'status', 'is_default', 'description', 'logo_path', 'cta_settings',
     ];
 
     protected $casts = [
+        'translations' => 'array',
         'starts_at' => 'date',
         'ends_at' => 'date',
         'is_default' => 'boolean',

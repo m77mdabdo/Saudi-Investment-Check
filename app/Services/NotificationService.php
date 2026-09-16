@@ -2,32 +2,222 @@
 
 namespace App\Services;
 
-use App\Mail\TemplatedMail;
+use App\Mail\BrandedMail;
+use App\Mail\LeadResultMail;
+use App\Mail\LeadStatusMail;
+use App\Mail\NewLeadMail;
+use App\Mail\TestMail;
 use App\Models\AdminNotification;
 use App\Models\Lead;
 use App\Models\NotificationLog;
 use App\Models\NotificationTemplate;
+use App\Models\SalesStatus;
+use App\Support\Locale;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 
+/**
+ * Every outbound message goes through here so that:
+ *  - delivery is attempted immediately (no queue worker to depend on),
+ *  - a failure is written to notification_logs and the application log,
+ *  - a failure never propagates into the visitor's request.
+ */
 class NotificationService
 {
     public function __construct(protected SettingsService $settings) {}
 
-    /** Fired after a lead is created. Never breaks the visitor's flow. */
+    /* ---------------------------------------------------------------- Leads */
+
     public function leadCreated(Lead $lead): void
     {
+        $lead->loadMissing(['answers.question', 'answers.option', 'rule', 'event', 'qrSource']);
+
         $this->createAdminNotification($lead);
 
         if ($this->enabled('notify_admin', config('creativemark.notifications.notify_admin'))) {
-            $this->sendTemplate('admin_new_lead', $lead, $this->adminRecipients());
+            $this->sendAdminAlert($lead);
         }
 
         if ($lead->email && $this->enabled('notify_customer', config('creativemark.notifications.notify_customer'))) {
-            $this->sendTemplate('customer_result', $lead, [$lead->email]);
+            $this->sendCustomerResult($lead);
         }
+    }
+
+    public function sendCustomerResult(Lead $lead): bool
+    {
+        if (! $lead->email) {
+            return false;
+        }
+
+        $locale = $this->leadLocale($lead);
+        $rule = $lead->rule;
+
+        $mailable = new LeadResultMail(
+            lead: $lead,
+            resultUrl: $this->signedResultUrl($lead, $locale),
+            ctaUrl: $rule?->primary_cta_url ?: $this->settings->cta('booking_url') ?: null,
+            ctaLabel: $rule?->t('primary_cta_label', $locale),
+            disclaimer: $rule?->t('disclaimer', $locale) ?: $this->settings->localized('result_disclaimer'),
+            locale: $locale,
+            subjectLine: $this->templateSubject('customer_result', $lead, $locale),
+        );
+
+        return $this->deliver($mailable, $lead->email, $lead, 'customer_result', 'lead', $locale);
+    }
+
+    public function sendAdminAlert(Lead $lead): bool
+    {
+        $recipients = $this->adminRecipients();
+
+        if ($recipients === []) {
+            $this->log($lead, 'admin_new_lead', '—', null, 'skipped', 'No admin recipients configured');
+
+            return false;
+        }
+
+        $locale = $this->adminLocale();
+        $sent = false;
+
+        foreach ($recipients as $recipient) {
+            $mailable = new NewLeadMail(
+                lead: $lead,
+                leadUrl: route('admin.leads.show', $lead),
+                locale: $locale,
+                subjectLine: $this->templateSubject('admin_new_lead', $lead, $locale),
+            );
+
+            $sent = $this->deliver($mailable, $recipient, $lead, 'admin_new_lead', 'lead', $locale) || $sent;
+        }
+
+        return $sent;
+    }
+
+    /** Fired when a lead reaches a sales status flagged as client-facing. */
+    public function leadStatusChanged(Lead $lead, SalesStatus $status): bool
+    {
+        if (! $status->notify_client || ! $lead->email) {
+            return false;
+        }
+
+        if (! $this->enabled('notify_status_change', true)) {
+            return false;
+        }
+
+        $locale = $this->leadLocale($lead);
+
+        $mailable = new LeadStatusMail(
+            lead: $lead,
+            statusLabel: (string) ($status->t('label', $locale) ?: $status->label),
+            ctaUrl: $this->settings->cta('booking_url') ?: $this->settings->cta('whatsapp_url') ?: null,
+            ctaLabel: $this->settings->cta('booking_url') ? __('emails.customer_result.cta', [], $locale) : null,
+            locale: $locale,
+            subjectLine: $this->templateSubject('lead_status_update', $lead, $locale),
+        );
+
+        return $this->deliver($mailable, $lead->email, $lead, 'lead_status_update', 'status', $locale);
+    }
+
+    /* ----------------------------------------------------------- Diagnostics */
+
+    public function sendTest(string $recipient, ?string $locale = null): bool
+    {
+        $locale = Locale::isSupported($locale) ? $locale : Locale::default();
+
+        return $this->deliver(new TestMail($locale), $recipient, null, 'test', 'test', $locale, throw: true);
+    }
+
+    /** Re-sends a previously logged message. */
+    public function resend(NotificationLog $log): bool
+    {
+        $lead = $log->lead;
+
+        return match ($log->template_key) {
+            'customer_result' => $lead ? $this->sendCustomerResult($lead) : false,
+            'admin_new_lead' => $lead ? $this->sendAdminAlert($lead) : false,
+            'test' => $this->sendTest($log->recipient, $log->locale),
+            default => false,
+        };
+    }
+
+    /* ------------------------------------------------------------- Internals */
+
+    /**
+     * Sends one message and records the outcome. Returns false instead of
+     * throwing unless the caller explicitly wants the exception (CLI/admin).
+     */
+    protected function deliver(
+        BrandedMail $mailable,
+        string $recipient,
+        ?Lead $lead,
+        string $templateKey,
+        string $type,
+        string $locale,
+        bool $throw = false,
+    ): bool {
+        if (! filter_var($recipient, FILTER_VALIDATE_EMAIL)) {
+            $this->log($lead, $templateKey, $recipient, $mailable->subjectLine, 'skipped', 'Invalid recipient address', $type, $locale);
+
+            return false;
+        }
+
+        try {
+            Mail::to($recipient)->send($mailable);
+
+            $this->log($lead, $templateKey, $recipient, $mailable->subjectLine, 'sent', null, $type, $locale);
+
+            Log::info('mail.sent', [
+                'template' => $templateKey,
+                'recipient' => $this->maskEmail($recipient),
+                'lead_id' => $lead?->id,
+                'mailer' => config('mail.default'),
+            ]);
+
+            return true;
+        } catch (\Throwable $e) {
+            $this->log($lead, $templateKey, $recipient, $mailable->subjectLine, 'failed', Str::limit($e->getMessage(), 900), $type, $locale);
+
+            Log::error('mail.failed', [
+                'template' => $templateKey,
+                'recipient' => $this->maskEmail($recipient),
+                'lead_id' => $lead?->id,
+                'mailer' => config('mail.default'),
+                'host' => config('mail.mailers.smtp.host'),
+                'error' => $e->getMessage(),
+            ]);
+
+            if ($throw) {
+                throw $e;
+            }
+
+            return false;
+        }
+    }
+
+    /** Subject override from the editable template, if the admin set one. */
+    protected function templateSubject(string $key, Lead $lead, string $locale): ?string
+    {
+        $template = $this->template($key);
+
+        if (! $template || ! filled($template->subject)) {
+            return null;
+        }
+
+        $subject = $template->localizedSubject($locale);
+
+        return filled($subject) ? $template->renderString($subject, $this->variables($lead, $locale)) : null;
+    }
+
+    protected function template(string $key): ?NotificationTemplate
+    {
+        static $cache = [];
+
+        if (! array_key_exists($key, $cache)) {
+            $cache[$key] = NotificationTemplate::query()->where('key', $key)->where('is_active', true)->first();
+        }
+
+        return $cache[$key];
     }
 
     public function enabled(string $key, mixed $default = true): bool
@@ -51,42 +241,30 @@ class NotificationService
             ->unique()->values()->all();
     }
 
-    /** @param array<int,string> $recipients */
-    public function sendTemplate(string $key, Lead $lead, array $recipients): void
+    protected function leadLocale(Lead $lead): string
     {
-        $template = NotificationTemplate::query()->where('key', $key)->where('is_active', true)->first();
+        return Locale::isSupported($lead->locale) ? $lead->locale : Locale::default();
+    }
 
-        if (! $template || $recipients === []) {
-            $this->log($lead, $key, $recipients[0] ?? '—', null, 'skipped', $template ? 'No recipients' : 'Template inactive or missing');
+    protected function adminLocale(): string
+    {
+        $configured = (string) $this->settings->get('admin_email_locale', Locale::default());
 
-            return;
-        }
+        return Locale::isSupported($configured) ? $configured : Locale::default();
+    }
 
-        $vars = $this->variables($lead);
-        $subject = $template->render('subject', $vars);
-        $body = $template->render('body', $vars);
+    public function signedResultUrl(Lead $lead, ?string $locale = null): string
+    {
+        $days = (int) config('creativemark.quiz.result_token_ttl_days', 30);
+        $name = Locale::routeName('result', $locale ?: $this->leadLocale($lead));
 
-        foreach ($recipients as $recipient) {
-            try {
-                Mail::to($recipient)->send(new TemplatedMail(
-                    subjectLine: $subject,
-                    bodyHtml: $body,
-                    ctaLabel: $vars['cta_label'] ?: null,
-                    ctaUrl: $vars['cta_url'] ?: null,
-                    preheader: Str::limit(strip_tags($body), 120),
-                ));
-
-                $this->log($lead, $key, $recipient, $subject, 'sent');
-            } catch (\Throwable $e) {
-                Log::error('notification.mail_failed', ['template' => $key, 'error' => $e->getMessage()]);
-                $this->log($lead, $key, $recipient, $subject, 'failed', Str::limit($e->getMessage(), 480));
-            }
-        }
+        return URL::temporarySignedRoute($name, now()->addDays($days), ['lead' => $lead->uuid]);
     }
 
     /** @return array<string,string> */
-    public function variables(Lead $lead): array
+    public function variables(Lead $lead, ?string $locale = null): array
     {
+        $locale ??= $this->leadLocale($lead);
         $rule = $lead->rule;
 
         return [
@@ -96,15 +274,15 @@ class NotificationService
             'email' => (string) $lead->email,
             'score' => (string) $lead->score,
             'max_score' => (string) $lead->max_score,
-            'result' => (string) ($rule?->headline ?? $lead->result_key),
+            'result' => (string) ($rule?->t('headline', $locale) ?? $lead->result_key),
             'classification' => (string) $lead->classification,
             'source' => (string) ($lead->qrSource?->name ?? $lead->source ?? 'Direct'),
             'event' => (string) ($lead->event?->name ?? '—'),
             'main_question' => (string) ($lead->mainQuestion() ?? '—'),
             'cta_url' => (string) ($rule?->primary_cta_url ?: $this->settings->cta('booking_url')),
-            'cta_label' => (string) ($rule?->primary_cta_label ?? ''),
+            'cta_label' => (string) ($rule?->t('primary_cta_label', $locale) ?? ''),
             'lead_url' => route('admin.leads.show', $lead),
-            'result_url' => URL::temporarySignedRoute('result', now()->addDays((int) config('creativemark.quiz.result_token_ttl_days', 30)), ['lead' => $lead->uuid]),
+            'result_url' => $this->signedResultUrl($lead, $locale),
             'date' => $lead->created_at?->format('d M Y H:i') ?? now()->format('d M Y H:i'),
         ];
     }
@@ -124,53 +302,37 @@ class NotificationService
         ]);
     }
 
-    public function log(?Lead $lead, string $key, string $recipient, ?string $subject, string $status, ?string $error = null): void
-    {
-        NotificationLog::create([
+    public function log(
+        ?Lead $lead,
+        string $key,
+        string $recipient,
+        ?string $subject,
+        string $status,
+        ?string $error = null,
+        string $type = 'lead',
+        ?string $locale = null,
+    ): NotificationLog {
+        return NotificationLog::create([
             'lead_id' => $lead?->id,
             'template_key' => $key,
+            'type' => $type,
             'channel' => 'mail',
+            'locale' => $locale ?: app()->getLocale(),
+            'mailer' => config('mail.default'),
             'recipient' => $recipient,
             'subject' => $subject,
             'status' => $status,
             'error' => $error,
+            'sent_at' => $status === 'sent' ? now() : null,
+            'failed_at' => $status === 'failed' ? now() : null,
         ]);
     }
 
-    public function sendPreview(NotificationTemplate $template, string $recipient, ?Lead $lead = null): void
+    /** Never write a full address into the application log. */
+    protected function maskEmail(string $email): string
     {
-        $vars = $lead ? $this->variables($lead) : $this->sampleVariables();
+        [$user, $domain] = array_pad(explode('@', $email, 2), 2, '');
 
-        Mail::to($recipient)->send(new TemplatedMail(
-            subjectLine: '[Preview] '.$template->render('subject', $vars),
-            bodyHtml: $template->render('body', $vars),
-            ctaLabel: $vars['cta_label'] ?: null,
-            ctaUrl: $vars['cta_url'] ?: null,
-        ));
-
-        $this->log($lead, $template->key, $recipient, $template->render('subject', $vars), 'sent', 'preview');
-    }
-
-    /** @return array<string,string> */
-    public function sampleVariables(): array
-    {
-        return [
-            'name' => 'Ahmed Samir',
-            'company' => 'XYZ Technologies',
-            'whatsapp' => '+201000000000',
-            'email' => 'sample@example.com',
-            'score' => '10',
-            'max_score' => (string) config('creativemark.quiz.max_score', 12),
-            'result' => 'Ready',
-            'classification' => 'Hot Lead',
-            'source' => 'Booth QR',
-            'event' => 'TECHNE — Alexandria 2026',
-            'main_question' => 'تكلفة التأسيس',
-            'cta_url' => $this->settings->cta('booking_url'),
-            'cta_label' => 'احجز تقييمك المجاني',
-            'lead_url' => route('admin.leads.index'),
-            'result_url' => route('landing'),
-            'date' => now()->format('d M Y H:i'),
-        ];
+        return Str::limit($user, 2, '').'***@'.$domain;
     }
 }

@@ -54,6 +54,25 @@ class SettingsService
         Cache::forget('settings.all');
     }
 
+    /**
+     * Value for the active language. English copies live next to the Arabic
+     * ones as `<key>_en`, so translating a setting never needs a migration.
+     */
+    public function localized(string $key, mixed $default = null): mixed
+    {
+        $locale = app()->getLocale();
+
+        if ($locale !== config('creativemark.base_locale', 'ar')) {
+            $translated = $this->get($key.'_'.$locale);
+
+            if (filled($translated)) {
+                return $translated;
+            }
+        }
+
+        return $this->get($key, $default);
+    }
+
     /** Public CTA links: settings override config, config overrides empty. */
     public function cta(string $key): string
     {

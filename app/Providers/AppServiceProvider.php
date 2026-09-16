@@ -9,6 +9,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
@@ -28,6 +29,8 @@ class AppServiceProvider extends ServiceProvider
         }
 
         Schema::defaultStringLength(191);
+
+        Gate::define('manage-platform', fn ($user) => $user->canManagePlatform());
 
         // Relative timestamps ("منذ 3 دقائق") read naturally in the RTL UI.
         \Carbon\Carbon::setLocale('ar');

@@ -30,16 +30,19 @@ class LandingController extends Controller
 
         $page = LandingPage::query()->where('slug', 'default')->where('is_active', true)->first();
         $event = Event::current();
+        $questionCount = $this->scoring->questions()->count();
 
         return view('public.landing', [
             'page' => $page,
-            'content' => $page?->content ?? [],
+            'content' => $page?->localizedContent() ?? [],
             'event' => $event,
             'hero' => $this->media->slot('hero'),
             'eventImage' => $this->media->slot('event'),
             'cta' => $this->settings->ctaLinks(),
-            'questionCount' => $this->scoring->questions()->count(),
-            'footerNote' => $this->settings->get('footer_note', '© Creative Mark'),
+            'questionCount' => $questionCount,
+            'seoTitle' => $page?->seoTitle() ?: __('seo.home.title'),
+            'seoDescription' => $page?->seoDescription() ?: __('seo.home.description'),
+            'footerNote' => $this->settings->localized('footer_note'),
         ]);
     }
 }

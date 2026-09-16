@@ -50,7 +50,7 @@
                         <input id="password" name="password" type="password" class="ad-input" required autocomplete="current-password">
                     </div>
                     <label class="flex items-center gap-2 text-sm text-slate-600">
-                        <input type="checkbox" name="remember" value="1" class="h-4 w-4 accent-[#d9a742]"> خليني مسجل دخول
+                        <input type="checkbox" name="remember" value="1" class="accent-[#d9a742]"> خليني مسجل دخول
                     </label>
                     <button type="submit" class="ad-btn ad-btn-dark w-full">دخول</button>
                 </form>

@@ -36,7 +36,7 @@
 
             <div class="grid grid-cols-2 gap-3">
                 <div><label class="ad-label" for="position">الترتيب</label><input id="position" type="number" name="position" class="ad-input" min="0" value="{{ old('position', $rule->position ?? 0) }}"></div>
-                <label class="mt-6 flex items-center gap-2 text-sm"><input type="checkbox" name="is_active" value="1" class="h-4 w-4 accent-[#d9a742]" @checked(old('is_active', $rule->is_active ?? true))> مفعّلة</label>
+                <label class="mt-6 flex items-center gap-2 text-sm"><input type="checkbox" name="is_active" value="1" class="accent-[#d9a742]" @checked(old('is_active', $rule->is_active ?? true))> مفعّلة</label>
             </div>
 
             <div><label class="ad-label" for="image_query">كلمات بحث الصورة (Pexels)</label>

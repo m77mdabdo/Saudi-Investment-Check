@@ -127,8 +127,27 @@ class Lead extends Model
         return (int) round(($this->score / $max) * 100);
     }
 
-    public function mainQuestion(): ?string
+    /**
+     * The visitor's "what do you most need answered" choice, translated to the
+     * active language. `answers_summary` holds the label as it was at submit
+     * time (Arabic), so the stored option is preferred when it still exists.
+     */
+    public function mainQuestion(?string $locale = null): ?string
     {
+        $answer = $this->relationLoaded('answers')
+            ? $this->answers->firstWhere('question_key', 'main_question')
+            : $this->answers()->where('question_key', 'main_question')->first();
+
+        if ($answer) {
+            $label = $answer->option?->t('label', $locale);
+
+            if (filled($label)) {
+                return $answer->answer_text ? $label.' — '.$answer->answer_text : $label;
+            }
+
+            return $answer->answer_label ?: $answer->answer_text;
+        }
+
         return $this->answers_summary['main_question'] ?? null;
     }
 }
