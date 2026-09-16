@@ -20,6 +20,7 @@ Alpine.data('quiz', (config) => ({
     stage: 'questions', // questions | lead
     submitting: false,
     routes: config.routes,
+    labels: config.labels ?? {},
     syncTimer: null,
 
     init() {
@@ -49,7 +50,11 @@ Alpine.data('quiz', (config) => ({
     },
 
     get stepLabel() {
-        return this.stage === 'lead' ? 'الخطوة الأخيرة' : `السؤال ${this.index + 1} من ${this.total}`
+        if (this.stage === 'lead') return this.labels.lastStep ?? ''
+
+        return (this.labels.step ?? ':current / :total')
+            .replace(':current', this.index + 1)
+            .replace(':total', this.total)
     },
 
     /** Flattened hidden inputs so the final POST carries every answer. */
@@ -193,6 +198,7 @@ Alpine.data('quiz', (config) => ({
 
 Alpine.data('phoneField', (config) => ({
     countries: config.countries ?? [],
+    locale: config.locale ?? 'ar',
     search: '',
     open: false,
     selected: null,
@@ -203,6 +209,11 @@ Alpine.data('phoneField', (config) => ({
             this.countries.find((c) => c.dial === preferred) ??
             this.countries.find((c) => c.iso === config.defaultIso) ??
             this.countries[0]
+    },
+
+    /** Country name in the interface language. */
+    label(country) {
+        return this.locale === 'en' ? country.name_en : country.name_ar
     },
 
     get filtered() {

@@ -1,0 +1,27 @@
+<?php
+
+return [
+    'eyebrow' => 'Creative Mark × TECHNE Alexandria',
+    'hero_kicker' => 'بوووم 💥 السعودية مستنياك 🇸🇦',
+    'hero_lead' => 'بس السؤال الأهم...',
+    'hero_title' => 'هل شركتك جاهزة تدخل السوق السعودي؟',
+    'hero_description' => "جاوب على كام سؤال سريع، وفي أقل من دقيقة هنعرفك:\nجاهز تبدأ؟\nمحتاج تجهيز بسيط؟\nولا محتاج تراجع خطتك الأول؟",
+    'hero_meta' => ':count أسئلة فقط • أقل من 60 ثانية',
+    'cta_label' => 'ابدأ الرحله',
+    'how_title' => 'إزاي بيشتغل؟',
+    'step_one_title' => 'جاوب على :count أسئلة',
+    'step_one_text' => 'كلها اختيارات سريعة — مفيش كتابة.',
+    'step_two_title' => 'سيب بياناتك',
+    'step_two_text' => 'الاسم، الشركة، والواتساب.',
+    'step_three_title' => 'اعرف نتيجتك فورًا',
+    'step_three_text' => 'جاهز؟ محتاج تجهيز؟ ولا بدري؟',
+    'benefit_speed_title' => 'أقل من 60 ثانية',
+    'benefit_speed_text' => 'كله اختيارات — من غير كتابة.',
+    'benefit_clarity_title' => 'نتيجة واضحة',
+    'benefit_clarity_text' => 'تعرف أنت في أي مرحلة بالظبط.',
+    'benefit_action_title' => 'خطوة عملية',
+    'benefit_action_text' => 'مستشار يقولك تبدأ منين.',
+    'contact_whatsapp' => 'تواصل واتساب',
+    'contact_booking' => 'احجز اجتماع',
+    'contact_website' => 'موقعنا',
+];

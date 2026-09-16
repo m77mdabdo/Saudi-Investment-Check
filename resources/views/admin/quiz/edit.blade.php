@@ -56,9 +56,9 @@
                 </div>
 
                 <div class="space-y-2 rounded-xl bg-slate-50 p-3">
-                    <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="is_active" value="1" class="h-4 w-4 accent-[#d9a742]" @checked(old('is_active', $question->is_active ?? true))> مفعّل</label>
-                    <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="is_required" value="1" class="h-4 w-4 accent-[#d9a742]" @checked(old('is_required', $question->is_required ?? true))> إجباري</label>
-                    <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="is_scored" value="1" class="h-4 w-4 accent-[#d9a742]" @checked(old('is_scored', $question->is_scored ?? true))> يدخل في النقاط</label>
+                    <label class="ad-check text-sm"><input type="checkbox" name="is_active" value="1" class="accent-[#d9a742]" @checked(old('is_active', $question->is_active ?? true))> مفعّل</label>
+                    <label class="ad-check text-sm"><input type="checkbox" name="is_required" value="1" class="accent-[#d9a742]" @checked(old('is_required', $question->is_required ?? true))> إجباري</label>
+                    <label class="ad-check text-sm"><input type="checkbox" name="is_scored" value="1" class="accent-[#d9a742]" @checked(old('is_scored', $question->is_scored ?? true))> يدخل في النقاط</label>
                 </div>
 
                 <button class="ad-btn ad-btn-primary w-full">{{ $isNew ? 'إنشاء السؤال' : 'حفظ' }}</button>
@@ -75,21 +75,21 @@
                     @if ($question->options->isEmpty())
                         <x-admin.empty icon="🎛️" title="مفيش اختيارات" text="ضيف أول اختيار من الفورم تحت." />
                     @else
-                        <table class="ad-table">
+                        <div class="ad-table-wrap"><table class="ad-table">
                             <thead><tr><th>#</th><th>الاختيار</th><th>المفتاح</th><th>النقاط</th><th>تفاصيل إضافية</th><th></th></tr></thead>
                             <tbody>
                                 @foreach ($question->options->sortBy('position') as $option)
                                     <tr>
                                         <td class="font-mono text-slate-400">{{ $option->position }}</td>
                                         <td>
-                                            <form method="POST" action="{{ route('admin.quiz.options.update', [$question, $option]) }}" class="flex flex-wrap items-center gap-2">
+                                            <form method="POST" action="{{ route('admin.quiz.options.update', [$question, $option]) }}" class="ad-inline-form">
                                                 @csrf @method('PUT')
                                                 <input name="icon" class="ad-input w-14 text-center" maxlength="8" value="{{ $option->icon }}">
                                                 <input name="label" class="ad-input w-40" required value="{{ $option->label }}">
                                                 <input name="description" class="ad-input w-48" value="{{ $option->description }}" placeholder="وصف مختصر">
                                                 <input type="hidden" name="key" value="{{ $option->key }}">
                                                 <input type="number" name="score" class="ad-input w-20" min="0" max="20" value="{{ $option->score }}">
-                                                <label class="flex items-center gap-1 text-xs"><input type="checkbox" name="requires_detail" value="1" class="h-4 w-4 accent-[#d9a742]" @checked($option->requires_detail)> "أخرى"</label>
+                                                <label class="ad-check"><input type="checkbox" name="requires_detail" value="1" class="accent-[#d9a742]" @checked($option->requires_detail)> "أخرى"</label>
                                                 <input name="detail_label" class="ad-input w-36" value="{{ $option->detail_label }}" placeholder="عنوان الحقل">
                                                 <input type="number" name="position" class="ad-input w-16" min="1" max="99" value="{{ $option->position }}" title="الترتيب">
                                                 <input type="hidden" name="is_active" value="1">
@@ -108,7 +108,7 @@
                                     </tr>
                                 @endforeach
                             </tbody>
-                        </table>
+                        </table></div>
                     @endif
                 </div>
 
@@ -123,7 +123,7 @@
                         <div class="sm:col-span-3"><label class="ad-label">وصف</label><input name="description" class="ad-input"></div>
                         <div class="sm:col-span-2"><label class="ad-label">عنوان حقل التفاصيل</label><input name="detail_label" class="ad-input" placeholder="اكتب نشاط الشركة"></div>
                         <div class="flex items-end gap-3 sm:col-span-1">
-                            <label class="flex items-center gap-1 text-xs"><input type="checkbox" name="requires_detail" value="1" class="h-4 w-4 accent-[#d9a742]"> "أخرى"</label>
+                            <label class="ad-check"><input type="checkbox" name="requires_detail" value="1" class="accent-[#d9a742]"> "أخرى"</label>
                         </div>
                         <input type="hidden" name="is_active" value="1">
                         <div class="sm:col-span-6"><button class="ad-btn ad-btn-primary">إضافة الاختيار</button></div>

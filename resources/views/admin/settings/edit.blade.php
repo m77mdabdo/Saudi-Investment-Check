@@ -13,8 +13,10 @@
                         @foreach ($settings as $setting)
                             <div>
                                 @if ($setting->type === 'bool')
-                                    <label class="flex items-center gap-2 text-sm">
-                                        <input type="checkbox" name="settings[{{ $setting->key }}]" value="1" class="h-4 w-4 accent-[#d9a742]" @checked(filter_var($setting->value, FILTER_VALIDATE_BOOL))>
+                                    {{-- Hidden 0 + checkbox 1: the value is always submitted explicitly. --}}
+                                    <input type="hidden" name="settings[{{ $setting->key }}]" value="0">
+                                    <label class="ad-check text-sm">
+                                        <input type="checkbox" name="settings[{{ $setting->key }}]" value="1" class="accent-[#d9a742]" @checked(filter_var($setting->value, FILTER_VALIDATE_BOOL))>
                                         {{ $setting->label ?? $setting->key }}
                                     </label>
                                 @elseif ($setting->type === 'text')
@@ -43,7 +45,7 @@
 
                 <div class="space-y-2">
                     @foreach ($statuses as $status)
-                        <form method="POST" action="{{ route('admin.settings.statuses.update', $status) }}" class="flex flex-wrap items-center gap-1.5 rounded-lg border border-line p-2">
+                        <form method="POST" action="{{ route('admin.settings.statuses.update', $status) }}" class="ad-inline-form rounded-lg border border-line p-2">
                             @csrf @method('PUT')
                             <input name="label" class="ad-input h-9 min-h-9 w-28 py-1 text-sm" value="{{ $status->label }}">
                             <select name="color" class="ad-select h-9 min-h-9 w-auto py-1 text-xs">
@@ -52,8 +54,12 @@
                                 @endforeach
                             </select>
                             <input type="number" name="position" class="ad-input h-9 min-h-9 w-16 py-1 text-xs" value="{{ $status->position }}">
-                            <label class="flex items-center gap-1 text-xs"><input type="checkbox" name="is_active" value="1" class="h-3.5 w-3.5 accent-[#d9a742]" @checked($status->is_active)> نشط</label>
-                            <label class="flex items-center gap-1 text-xs"><input type="checkbox" name="is_default" value="1" class="h-3.5 w-3.5 accent-[#d9a742]" @checked($status->is_default)> افتراضي</label>
+                            <label class="ad-check"><input type="checkbox" name="is_active" value="1" class="accent-[#d9a742]" @checked($status->is_active)> نشط</label>
+                            <label class="ad-check"><input type="checkbox" name="is_default" value="1" class="accent-[#d9a742]" @checked($status->is_default)> افتراضي</label>
+                            <label class="ad-check" title="إرسال إيميل للعميل عند الوصول لهذه الحالة">
+                                <input type="checkbox" name="notify_client" value="1" class="accent-[#d9a742]" @checked($status->notify_client)> إشعار العميل
+                            </label>
+                            <input name="label_en" class="ad-input h-9 min-h-9 w-24 py-1 text-xs" dir="ltr" value="{{ $status->rawTranslation('label', 'en') }}" placeholder="EN">
                             <button class="ad-btn ad-btn-ghost px-2 text-xs">حفظ</button>
                         </form>
                     @endforeach

@@ -2,14 +2,16 @@
 
 namespace App\Models;
 
+use App\Support\HasTranslations;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class ResultRule extends Model
 {
-    use HasFactory;
+    use HasFactory, HasTranslations;
 
     protected $fillable = [
+        'translations',
         'key', 'classification', 'indicator', 'min_score', 'max_score',
         'headline', 'main_text', 'body', 'highlight', 'bullets',
         'primary_cta_label', 'primary_cta_url', 'secondary_cta_label', 'secondary_cta_url',
@@ -17,6 +19,7 @@ class ResultRule extends Model
     ];
 
     protected $casts = [
+        'translations' => 'array',
         'bullets' => 'array',
         'is_active' => 'boolean',
         'min_score' => 'integer',

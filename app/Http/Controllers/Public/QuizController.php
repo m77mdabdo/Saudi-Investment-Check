@@ -38,7 +38,7 @@ class QuizController extends Controller
         $questions = $this->scoring->questions();
 
         if ($questions->isEmpty()) {
-            return redirect()->route('landing')->with('status', 'التقييم مش متاح حاليًا.');
+            return redirect()->to(lroute('landing'))->with('status', __('quiz.unavailable'));
         }
 
         $this->analytics->recordOnce('quiz_started', $request);
@@ -49,26 +49,28 @@ class QuizController extends Controller
             'questions' => $questions->map(fn (QuizQuestion $q) => [
                 'key' => $q->key,
                 'type' => $q->type,
-                'title' => $q->title,
-                'subtitle' => $q->subtitle,
+                'title' => $q->t('title'),
+                'subtitle' => $q->t('subtitle'),
                 'icon' => $q->icon,
-                'placeholder' => $q->placeholder,
+                'placeholder' => $q->t('placeholder'),
                 'required' => (bool) $q->is_required,
                 'options' => $q->activeOptions->map(fn ($o) => [
                     'key' => $o->key,
-                    'label' => $o->label,
-                    'description' => $o->description,
+                    'label' => $o->t('label'),
+                    'description' => $o->t('description'),
                     'icon' => $o->icon,
                     'requires_detail' => (bool) $o->requires_detail,
-                    'detail_label' => $o->detail_label,
+                    'detail_label' => $o->t('detail_label'),
                 ])->values(),
             ])->values(),
             'saved' => $this->savedAnswers($request),
-            'content' => $page?->content ?? [],
+            'content' => $page?->localizedContent() ?? [],
             'countries' => config('countries.list'),
             'defaultCountry' => config('countries.default'),
             'cta' => $this->settings->ctaLinks(),
             'backdrop' => $this->media->slot('quiz'),
+            'seoTitle' => __('seo.quiz.title'),
+            'seoDescription' => __('seo.quiz.description'),
         ]);
     }
 
@@ -121,6 +123,8 @@ class QuizController extends Controller
         $this->analytics->recordOnce('quiz_completed', $request);
         $this->analytics->recordOnce('lead_form_viewed', $request);
 
+        Log::info('quiz.completed', ['locale' => app()->getLocale()]);
+
         return response()->json(['ok' => true]);
     }
 
@@ -131,7 +135,7 @@ class QuizController extends Controller
             $at = (int) $request->session()->get('smrc.last_lead_at', 0);
 
             if ($at > now()->subMinutes(10)->timestamp) {
-                return redirect()->route('result', ['lead' => $uuid]);
+                return redirect()->to(lroute('result', ['lead' => $uuid]));
             }
         }
 
@@ -149,28 +153,30 @@ class QuizController extends Controller
             default => 'result_early_stage',
         }, $request, $lead);
 
+        // Notification failures are logged inside the service and must never
+        // reach the visitor — they already have their result.
         try {
             $this->notifications->leadCreated($lead);
         } catch (\Throwable $e) {
-            Log::error('lead.notification_failed', ['lead' => $lead->id, 'error' => $e->getMessage()]);
+            Log::error('lead.notification_failed', ['lead_id' => $lead->id, 'error' => $e->getMessage()]);
         }
 
-        return redirect()->route('result', ['lead' => $lead->uuid]);
+        return redirect()->to(lroute('result', ['lead' => $lead->uuid]));
     }
 
     public function result(Request $request, string $lead): View|RedirectResponse
     {
-        $model = Lead::query()->with(['rule', 'answers', 'event'])->where('uuid', $lead)->first();
+        $model = Lead::query()->with(['rule', 'answers.question', 'answers.option', 'event'])->where('uuid', $lead)->first();
 
         if (! $model) {
-            return redirect()->route('landing');
+            return redirect()->to(lroute('landing'));
         }
 
         $owned = in_array($lead, (array) $request->session()->get('smrc.leads', []), true)
             || $request->session()->get('smrc.last_lead_uuid') === $lead;
 
         if (! $owned && ! $request->hasValidSignature()) {
-            return redirect()->route('landing');
+            return redirect()->to(lroute('landing'));
         }
 
         $rule = $model->rule;
@@ -185,8 +191,10 @@ class QuizController extends Controller
             'rule' => $rule,
             'cta' => $this->settings->ctaLinks(),
             'image' => $this->media->slot($slot),
-            'disclaimer' => $rule?->disclaimer ?: $this->settings->get('result_disclaimer'),
-            'footerNote' => $this->settings->get('footer_note', '© Creative Mark'),
+            'disclaimer' => $rule?->t('disclaimer') ?: $this->settings->localized('result_disclaimer'),
+            'footerNote' => $this->settings->localized('footer_note', '© Creative Mark'),
+            'seoTitle' => __('seo.result.title'),
+            'seoDescription' => __('seo.result.description'),
         ]);
     }
 

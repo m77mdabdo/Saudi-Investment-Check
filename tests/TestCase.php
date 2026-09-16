@@ -67,6 +67,7 @@ abstract class TestCase extends BaseTestCase
             'phone' => '1000000000',
             'email' => 'ahmed@example.com',
             'consent' => '1',
+            'locale' => app()->getLocale(),
             'answers' => $answers ?? $this->perfectAnswers(),
         ], $overrides);
     }

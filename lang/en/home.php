@@ -1,0 +1,27 @@
+<?php
+
+return [
+    'eyebrow' => 'Creative Mark × TECHNE Alexandria',
+    'hero_kicker' => 'Boom 💥 Saudi Arabia is waiting for you 🇸🇦',
+    'hero_lead' => 'But here is the real question...',
+    'hero_title' => 'Is your company ready to enter the Saudi market?',
+    'hero_description' => "Answer a few quick questions and in under a minute you will know:\nReady to start?\nA little preparation needed?\nOr time to revisit the plan first?",
+    'hero_meta' => 'Only :count questions • under 60 seconds',
+    'cta_label' => 'Start the check',
+    'how_title' => 'How it works',
+    'step_one_title' => 'Answer :count questions',
+    'step_one_text' => 'All tap-to-select — no typing.',
+    'step_two_title' => 'Leave your details',
+    'step_two_text' => 'Name, company and WhatsApp.',
+    'step_three_title' => 'Get your result instantly',
+    'step_three_text' => 'Ready? Needs preparation? Or too early?',
+    'benefit_speed_title' => 'Under 60 seconds',
+    'benefit_speed_text' => 'Tap to choose — nothing to type.',
+    'benefit_clarity_title' => 'A clear result',
+    'benefit_clarity_text' => 'Know exactly where you stand.',
+    'benefit_action_title' => 'A practical next step',
+    'benefit_action_text' => 'A consultant tells you where to begin.',
+    'contact_whatsapp' => 'Chat on WhatsApp',
+    'contact_booking' => 'Book a meeting',
+    'contact_website' => 'Our website',
+];

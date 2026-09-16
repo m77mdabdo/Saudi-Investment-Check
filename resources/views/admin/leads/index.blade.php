@@ -31,7 +31,7 @@
             />
         @else
             <div class="overflow-x-auto">
-                <table class="ad-table">
+                <div class="ad-table-wrap"><table class="ad-table">
                     <thead>
                         <tr>
                             @php
@@ -81,7 +81,7 @@
                             </tr>
                         @endforeach
                     </tbody>
-                </table>
+                </table></div>
             </div>
 
             <div class="border-t border-line px-4 py-3">

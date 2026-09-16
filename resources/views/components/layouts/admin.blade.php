@@ -5,38 +5,39 @@
     $canManage = (bool) $user?->canManagePlatform();
 
     $nav = [
-        'Overview' => [
-            ['label' => 'Dashboard', 'route' => 'admin.dashboard', 'icon' => 'dashboard', 'active' => 'admin.dashboard'],
-            ['label' => 'Analytics', 'route' => 'admin.analytics', 'icon' => 'analytics', 'active' => 'admin.analytics'],
+        __('admin.nav.overview') => [
+            ['label' => __('admin.nav.dashboard'), 'route' => 'admin.dashboard', 'icon' => 'dashboard', 'active' => 'admin.dashboard'],
+            ['label' => __('admin.nav.analytics'), 'route' => 'admin.analytics', 'icon' => 'analytics', 'active' => 'admin.analytics'],
         ],
-        'Sales' => [
-            ['label' => 'Leads', 'route' => 'admin.leads.index', 'icon' => 'leads', 'active' => 'admin.leads.*'],
-            ['label' => 'Notifications', 'route' => 'admin.notifications.index', 'icon' => 'bell', 'active' => 'admin.notifications.index'],
+        __('admin.nav.sales') => [
+            ['label' => __('admin.nav.leads'), 'route' => 'admin.leads.index', 'icon' => 'leads', 'active' => 'admin.leads.*'],
+            ['label' => __('admin.nav.notifications'), 'route' => 'admin.notifications.index', 'icon' => 'bell', 'active' => 'admin.notifications.index'],
+            ['label' => __('admin.nav.email_logs'), 'route' => 'admin.emails.index', 'icon' => 'mail', 'active' => 'admin.emails.*'],
         ],
-        'Experience' => [
-            ['label' => 'Quiz', 'route' => 'admin.quiz.index', 'icon' => 'quiz', 'active' => 'admin.quiz.*', 'manage' => true],
-            ['label' => 'Results', 'route' => 'admin.results.index', 'icon' => 'results', 'active' => 'admin.results.*', 'manage' => true],
-            ['label' => 'CMS', 'route' => 'admin.cms.edit', 'icon' => 'cms', 'active' => 'admin.cms.*', 'manage' => true],
-            ['label' => 'Media', 'route' => 'admin.media.index', 'icon' => 'media', 'active' => 'admin.media.*', 'manage' => true],
+        __('admin.nav.experience') => [
+            ['label' => __('admin.nav.quiz'), 'route' => 'admin.quiz.index', 'icon' => 'quiz', 'active' => 'admin.quiz.*', 'manage' => true],
+            ['label' => __('admin.nav.results'), 'route' => 'admin.results.index', 'icon' => 'results', 'active' => 'admin.results.*', 'manage' => true],
+            ['label' => __('admin.nav.cms'), 'route' => 'admin.cms.edit', 'icon' => 'cms', 'active' => 'admin.cms.*', 'manage' => true],
+            ['label' => __('admin.nav.media'), 'route' => 'admin.media.index', 'icon' => 'media', 'active' => 'admin.media.*', 'manage' => true],
         ],
-        'Setup' => [
-            ['label' => 'Events', 'route' => 'admin.events.index', 'icon' => 'events', 'active' => 'admin.events.*', 'manage' => true],
-            ['label' => 'QR Sources', 'route' => 'admin.qr.index', 'icon' => 'qr', 'active' => 'admin.qr.*', 'manage' => true],
-            ['label' => 'Email templates', 'route' => 'admin.notifications.templates', 'icon' => 'mail', 'active' => 'admin.notifications.templates', 'manage' => true],
-            ['label' => 'Settings', 'route' => 'admin.settings.edit', 'icon' => 'settings', 'active' => 'admin.settings.*', 'manage' => true],
-            ['label' => 'Users & Roles', 'route' => 'admin.users.index', 'icon' => 'users', 'active' => 'admin.users.*', 'manage' => true],
+        __('admin.nav.setup') => [
+            ['label' => __('admin.nav.events'), 'route' => 'admin.events.index', 'icon' => 'events', 'active' => 'admin.events.*', 'manage' => true],
+            ['label' => __('admin.nav.qr_sources'), 'route' => 'admin.qr.index', 'icon' => 'qr', 'active' => 'admin.qr.*', 'manage' => true],
+            ['label' => __('admin.nav.email_templates'), 'route' => 'admin.notifications.templates', 'icon' => 'mail', 'active' => 'admin.notifications.templates', 'manage' => true],
+            ['label' => __('admin.nav.settings'), 'route' => 'admin.settings.edit', 'icon' => 'settings', 'active' => 'admin.settings.*', 'manage' => true],
+            ['label' => __('admin.nav.users'), 'route' => 'admin.users.index', 'icon' => 'users', 'active' => 'admin.users.*', 'manage' => true],
         ],
     ];
 @endphp
 
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="{{ \App\Support\Locale::meta()['html'] }}" dir="{{ \App\Support\Locale::direction() }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="robots" content="noindex,nofollow">
-    <title>{{ $title }} — Creative Mark Console</title>
+    <title>{{ $title }} — {{ __('admin.console') }}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
@@ -78,13 +79,13 @@
             </nav>
 
             <div class="mt-6 rounded-xl border border-white/10 bg-white/5 p-3">
-                <p class="text-[0.7rem] font-bold uppercase tracking-wider text-slate-400">Live event</p>
+                <p class="text-[0.7rem] font-bold uppercase tracking-wider text-slate-400">{{ __('admin.live_event') }}</p>
                 <p class="mt-1 text-sm font-extrabold text-white">{{ $currentEvent?->name ?? 'No active event' }}</p>
                 @if ($currentEvent?->city)
                     <p class="text-xs text-slate-400" dir="ltr">{{ $currentEvent->city }} · {{ $currentEvent->date_range }}</p>
                 @endif
                 <a href="{{ route('landing') }}" target="_blank" rel="noopener" class="mt-2 inline-block text-xs font-bold text-[#eccf8b] hover:underline">
-                    افتح الصفحة العامة ↗
+                    {{ __('admin.open_public_site') }} ↗
                 </a>
             </div>
         </aside>
@@ -95,22 +96,22 @@
         <div class="flex min-w-0 flex-1 flex-col">
             <header class="sticky top-0 z-20 border-b border-line bg-white/85 backdrop-blur">
                 <div class="flex items-center gap-3 px-4 py-3 sm:px-6">
-                    <button type="button" class="ad-btn ad-btn-ghost px-2.5 lg:hidden" @click="sidebar = !sidebar" aria-label="القائمة">☰</button>
+                    <button type="button" class="ad-btn ad-btn-ghost px-2.5 lg:hidden" @click="sidebar = !sidebar" aria-label="{{ __('common.search') }}">☰</button>
 
                     <form method="GET" action="{{ route('admin.leads.index') }}" class="relative min-w-0 flex-1 max-w-md">
                         <x-admin.icon name="search" class="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                        <input type="search" name="q" value="{{ request('q') }}" placeholder="ابحث باسم، شركة، واتساب، إيميل..."
-                               class="ad-input ps-9" aria-label="بحث في الـleads">
+                        <input type="search" name="q" value="{{ request('q') }}" placeholder="{{ __('admin.search_placeholder') }}"
+                               class="ad-input ps-9" aria-label="{{ __('admin.search_placeholder') }}">
                     </form>
 
                     <div class="ms-auto flex items-center gap-2">
                         <a href="{{ route('admin.leads.index', ['result' => 'ready']) }}" class="ad-btn ad-btn-ghost hidden sm:inline-flex">
-                            <x-admin.icon name="flame" class="h-4 w-4 text-rose-500" /> Hot leads
+                            <x-admin.icon name="flame" class="h-4 w-4 text-rose-500" /> {{ __('admin.hot_leads') }}
                         </a>
 
                         {{-- Notifications --}}
                         <div class="relative" x-data="{ open: false }">
-                            <button type="button" class="ad-btn ad-btn-ghost relative px-2.5" @click="open = !open" aria-label="الإشعارات">
+                            <button type="button" class="ad-btn ad-btn-ghost relative px-2.5" @click="open = !open" aria-label="{{ __('admin.nav.notifications') }}">
                                 <x-admin.icon name="bell" class="h-4 w-4" />
                                 @if ($unreadNotifications)
                                     <span class="absolute -top-1 -end-1 grid h-4 min-w-4 place-items-center rounded-full bg-rose-500 px-1 text-[0.65rem] font-black text-white">{{ $unreadNotifications }}</span>
@@ -120,10 +121,10 @@
                             <div x-show="open" x-cloak @click.outside="open = false"
                                  class="absolute end-0 z-30 mt-2 w-80 overflow-hidden rounded-xl border border-line bg-white shadow-xl">
                                 <div class="flex items-center justify-between border-b border-line px-3 py-2">
-                                    <span class="text-sm font-bold">الإشعارات</span>
+                                    <span class="text-sm font-bold">{{ __('admin.nav.notifications') }}</span>
                                     <form method="POST" action="{{ route('admin.notifications.read-all') }}">
                                         @csrf
-                                        <button class="text-xs font-bold text-slate-500 hover:text-slate-800">تعليم الكل كمقروء</button>
+                                        <button class="text-xs font-bold text-slate-500 hover:text-slate-800">{{ __('admin.mark_all_read') }}</button>
                                     </form>
                                 </div>
                                 <div class="max-h-80 overflow-y-auto">
@@ -138,10 +139,10 @@
                                             </span>
                                         </a>
                                     @empty
-                                        <p class="px-3 py-6 text-center text-sm text-slate-500">مفيش إشعارات لسه.</p>
+                                        <p class="px-3 py-6 text-center text-sm text-slate-500">{{ __('admin.no_notifications') }}</p>
                                     @endforelse
                                 </div>
-                                <a href="{{ route('admin.notifications.index') }}" class="block border-t border-line px-3 py-2 text-center text-xs font-bold text-slate-600 hover:bg-slate-50">عرض الكل</a>
+                                <a href="{{ route('admin.notifications.index') }}" class="block border-t border-line px-3 py-2 text-center text-xs font-bold text-slate-600 hover:bg-slate-50">{{ __('admin.view_all') }}</a>
                             </div>
                         </div>
 
@@ -158,10 +159,10 @@
                                     <p class="truncate text-xs text-slate-500">{{ $user?->email }}</p>
                                     <p class="mt-1 text-[0.7rem] font-bold text-slate-400">{{ $user?->roleLabel() }}</p>
                                 </div>
-                                <a href="{{ route('admin.leads.export', request()->query()) }}" class="block px-3 py-2 text-sm hover:bg-slate-50">تصدير Excel</a>
+                                <a href="{{ route('admin.leads.export', request()->query()) }}" class="block px-3 py-2 text-sm hover:bg-slate-50">{{ __('admin.export_excel') }}</a>
                                 <form method="POST" action="{{ route('admin.logout') }}">
                                     @csrf
-                                    <button class="block w-full px-3 py-2 text-start text-sm text-rose-600 hover:bg-rose-50">تسجيل الخروج</button>
+                                    <button class="block w-full px-3 py-2 text-start text-sm text-rose-600 hover:bg-rose-50">{{ __('admin.logout') }}</button>
                                 </form>
                             </div>
                         </div>
@@ -169,7 +170,7 @@
                 </div>
             </header>
 
-            <main class="min-w-0 flex-1 px-4 py-6 sm:px-6">
+            <main class="ad-shell-main min-w-0 flex-1 px-3 py-5 sm:px-6 sm:py-6">
                 {{ $slot }}
             </main>
         </div>

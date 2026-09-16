@@ -34,7 +34,7 @@
                 @if ($sources->isEmpty())
                     <x-admin.empty icon="🏷️" title="مفيش مصادر QR" text="اعمل أول مصدر عشان تعرف كل lead جه منين." />
                 @else
-                    <table class="ad-table">
+                    <div class="ad-table-wrap"><table class="ad-table">
                         <thead><tr><th>المصدر</th><th>الرابط</th><th>Leads</th><th>Hot</th><th>الحالة</th><th></th></tr></thead>
                         <tbody>
                             @foreach ($sources as $source)
@@ -72,7 +72,7 @@
                                 </tr>
                             @endforeach
                         </tbody>
-                    </table>
+                    </table></div>
                 @endif
             </div>
             <p class="mt-3 text-xs text-slate-500">

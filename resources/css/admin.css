@@ -25,12 +25,20 @@
 }
 
 @layer base {
+    html {
+        overflow-x: clip;
+    }
+
     body {
         background-color: var(--color-surface);
         color: #0f172a;
         font-family: var(--font-sans);
+        font-size: clamp(0.9rem, 0.88rem + 0.1vw, 0.98rem);
         -webkit-font-smoothing: antialiased;
+        overflow-x: hidden;
     }
+
+    img, svg, canvas, video { max-width: 100%; height: auto; }
 
     :focus-visible {
         outline: 2px solid var(--color-gold-500);
@@ -157,8 +165,17 @@
     .ad-badge-gold    { background: #fdf0d5; color: #8a5f10; }
     .ad-badge-slate   { background: #e2e8f0; color: #334155; }
 
+    /* Tables stay readable on phones by scrolling inside their own card. */
+    .ad-table-wrap {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
     .ad-table {
         width: 100%;
+        min-width: 44rem;
         border-collapse: separate;
         border-spacing: 0;
         font-size: 0.9rem;
@@ -230,6 +247,57 @@
         background: linear-gradient(135deg, #0f1c36, #1b2c50);
         color: #fff;
     }
+
+    /* Checkboxes/radios are tap targets, not decorations. */
+    input[type='checkbox'],
+    input[type='radio'] {
+        width: 1.15rem;
+        height: 1.15rem;
+        accent-color: var(--color-gold-500);
+    }
+
+    .ad-check {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        min-height: 2.25rem;
+        font-size: 0.82rem;
+        color: #334155;
+    }
+
+    /* Dense inline editors become stacked cards on a phone. */
+    .ad-inline-form {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.4rem;
+    }
+}
+
+@media (max-width: 640px) {
+    /* Comfortable thumb targets on phones. */
+    input[type='checkbox'],
+    input[type='radio'] { width: 1.25rem; height: 1.25rem; }
+    .ad-check { min-height: 2.5rem; }
+
+    .ad-inline-form { gap: 0.5rem; }
+    .ad-inline-form > * { flex: 1 1 100%; }
+    .ad-inline-form .ad-check { flex: 0 0 auto; }
+    .ad-inline-form input.ad-input,
+    .ad-inline-form select.ad-select { min-height: 2.6rem; }
+}
+
+/* Phones: form rows stack, buttons stay tappable, nothing overflows. */
+@media (max-width: 640px) {
+    .ad-table { min-width: 38rem; }
+    .ad-btn { min-height: 2.75rem; }
+    .ad-card { border-radius: 0.85rem; }
+    .ad-stat { padding: 0.9rem 1rem; }
+}
+
+/* Ultra-wide screens: cap the working area so content is not stretched. */
+@media (min-width: 2000px) {
+    .ad-shell-main { max-width: 1800px; margin-inline: auto; }
 }
 
 @media (prefers-reduced-motion: reduce) {

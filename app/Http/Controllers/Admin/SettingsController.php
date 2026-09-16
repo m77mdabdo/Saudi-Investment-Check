@@ -54,16 +54,15 @@ class SettingsController extends Controller
             $setting->update(['value' => $setting->type === 'bool' ? (filter_var($value, FILTER_VALIDATE_BOOL) ? '1' : '0') : $value]);
         }
 
-        // Unchecked checkboxes never arrive — reset boolean settings explicitly.
-        foreach ($known->where('type', 'bool') as $setting) {
-            if (! array_key_exists($setting->key, (array) $request->input('settings', []))) {
-                $setting->update(['value' => '0']);
-            }
-        }
+        /*
+         | Booleans are submitted as an explicit 0/1 pair (hidden input + checkbox)
+         | so a form that does not render a toggle can never silently switch it
+         | off — that is what stopped customer result emails from going out.
+         */
 
         $this->settings->flush();
 
-        return back()->with('success', 'تم حفظ الإعدادات.');
+        return back()->with('success', __('admin.flash.saved'));
     }
 
     public function storeStatus(Request $request): RedirectResponse
@@ -81,7 +80,7 @@ class SettingsController extends Controller
             'is_active' => true,
         ]);
 
-        return back()->with('success', 'تمت إضافة الحالة.');
+        return back()->with('success', __('admin.flash.created'));
     }
 
     public function updateStatus(Request $request, SalesStatus $status): RedirectResponse
@@ -92,21 +91,27 @@ class SettingsController extends Controller
             'position' => ['nullable', 'integer', 'min:0', 'max:99'],
             'is_active' => ['nullable', 'boolean'],
             'is_default' => ['nullable', 'boolean'],
+            'notify_client' => ['nullable', 'boolean'],
+            'label_en' => ['nullable', 'string', 'max:40'],
         ]);
 
-        $status->update([
+        $status->fill([
             'label' => $data['label'],
             'color' => $data['color'],
             'position' => $data['position'] ?? $status->position,
             'is_active' => $request->boolean('is_active'),
             'is_default' => $request->boolean('is_default'),
+            'notify_client' => $request->boolean('notify_client'),
         ]);
+
+        $status->setTranslations('en', ['label' => $data['label_en'] ?? null]);
+        $status->save();
 
         if ($status->is_default) {
             SalesStatus::query()->whereKeyNot($status->id)->update(['is_default' => false]);
         }
 
-        return back()->with('success', 'تم حفظ الحالة.');
+        return back()->with('success', __('admin.flash.saved'));
     }
 
     public function destroyStatus(SalesStatus $status): RedirectResponse
@@ -115,6 +120,6 @@ class SettingsController extends Controller
 
         $status->delete();
 
-        return back()->with('success', 'تم حذف الحالة.');
+        return back()->with('success', __('admin.flash.deleted'));
     }
 }

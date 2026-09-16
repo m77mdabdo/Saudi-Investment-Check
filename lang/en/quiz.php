@@ -1,0 +1,33 @@
+<?php
+
+return [
+    'title' => 'Readiness check',
+    'intro' => 'Pick the answer closest to your company — there is no wrong answer.',
+    'step' => 'Question :current of :total',
+    'last_step' => 'Final step',
+    'progress_label' => 'Assessment progress',
+    'next' => 'Next',
+    'previous' => 'Back',
+    'finish' => 'Done — show my result',
+    'pick_to_continue' => 'Choose an answer to continue 👆',
+    'detail_placeholder' => 'Add the details',
+    'lead_headline' => 'Great — we have a good idea of where you stand 👀',
+    'lead_text' => 'Leave your details and we will show your Saudi-Ready Check result.',
+    'lead_cta' => 'Show my result',
+    'lead_submitting' => 'One moment, preparing your result...',
+    'consent' => 'I agree to be contacted by the Creative Mark team about my assessment result and Saudi market entry options.',
+    'privacy_note' => 'Your details are used only to follow up on this assessment.',
+    'country_search' => 'Search for a country...',
+    'country_label' => 'Select country code',
+    'unavailable' => 'The assessment is not available right now.',
+    'fields' => [
+        'name' => 'Full name',
+        'name_placeholder' => 'Your full name',
+        'company' => 'Company name',
+        'company_placeholder' => 'Your company',
+        'whatsapp' => 'WhatsApp number',
+        'whatsapp_placeholder' => '5xxxxxxxx',
+        'email' => 'Email address',
+        'email_placeholder' => 'name@company.com',
+    ],
+];

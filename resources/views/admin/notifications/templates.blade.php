@@ -28,7 +28,7 @@
                     <div><label class="ad-label">اسم القالب</label><input name="name" class="ad-input" required value="{{ $template->name }}"></div>
                     <div><label class="ad-label">عنوان الرسالة</label><input name="subject" class="ad-input" required value="{{ $template->subject }}"></div>
                     <div><label class="ad-label">المحتوى (HTML)</label><textarea name="body" class="ad-textarea font-mono text-xs" rows="12" required>{{ $template->body }}</textarea></div>
-                    <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="is_active" value="1" class="h-4 w-4 accent-[#d9a742]" @checked($template->is_active)> مفعّل</label>
+                    <label class="ad-check text-sm"><input type="checkbox" name="is_active" value="1" class="accent-[#d9a742]" @checked($template->is_active)> مفعّل</label>
                     <button class="ad-btn ad-btn-primary">حفظ القالب</button>
                 </form>
 
@@ -46,7 +46,7 @@
         @if ($logs->isEmpty())
             <x-admin.empty icon="📨" title="مفيش رسايل اتبعتت لسه" />
         @else
-            <table class="ad-table">
+            <div class="ad-table-wrap"><table class="ad-table">
                 <thead><tr><th>القالب</th><th>المستقبل</th><th>Lead</th><th>الحالة</th><th>التاريخ</th></tr></thead>
                 <tbody>
                     @foreach ($logs as $log)
@@ -59,7 +59,7 @@
                         </tr>
                     @endforeach
                 </tbody>
-            </table>
+            </table></div>
         @endif
     </section>
 </x-layouts.admin>

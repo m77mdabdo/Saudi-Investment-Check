@@ -18,7 +18,7 @@
         @if ($questions->isEmpty())
             <x-admin.empty icon="🧩" title="مفيش أسئلة لسه" text="ابدأ بإضافة أول سؤال للاختبار." cta-label="سؤال جديد" :cta-url="route('admin.quiz.create')" />
         @else
-            <table class="ad-table">
+            <div class="ad-table-wrap"><table class="ad-table">
                 <thead>
                     <tr><th>#</th><th>السؤال</th><th>النوع</th><th>الاختيارات</th><th>أعلى نقاط</th><th>الحالة</th><th></th></tr>
                 </thead>
@@ -55,7 +55,7 @@
                         </tr>
                     @endforeach
                 </tbody>
-            </table>
+            </table></div>
         @endif
     </div>
 

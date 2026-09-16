@@ -1,2 +1,8 @@
 User-agent: *
-Disallow:
+Allow: /
+Disallow: /admin
+Disallow: /result/
+Disallow: /en/result/
+Disallow: /qr/
+
+Sitemap: https://investment.dareljamila.com/sitemap.xml

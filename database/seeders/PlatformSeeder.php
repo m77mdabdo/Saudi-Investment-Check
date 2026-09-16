@@ -44,7 +44,7 @@ class PlatformSeeder extends Seeder
             ['key' => 'new', 'label' => 'New', 'color' => 'blue', 'is_default' => true],
             ['key' => 'contacted', 'label' => 'Contacted', 'color' => 'indigo'],
             ['key' => 'follow_up', 'label' => 'Follow-up', 'color' => 'amber'],
-            ['key' => 'meeting', 'label' => 'Meeting', 'color' => 'violet'],
+            ['key' => 'meeting', 'label' => 'Meeting', 'color' => 'violet', 'notify_client' => true],
             ['key' => 'qualified', 'label' => 'Qualified', 'color' => 'emerald'],
             ['key' => 'converted', 'label' => 'Converted', 'color' => 'gold'],
             ['key' => 'lost', 'label' => 'Lost', 'color' => 'slate'],
@@ -95,9 +95,13 @@ class PlatformSeeder extends Seeder
             ['key' => 'cta_website', 'value' => '', 'type' => 'url', 'group' => 'cta', 'label' => 'Website URL', 'position' => 6],
             ['key' => 'notify_admin', 'value' => '1', 'type' => 'bool', 'group' => 'notifications', 'label' => 'Email the sales team on every new lead', 'position' => 1],
             ['key' => 'notify_customer', 'value' => '1', 'type' => 'bool', 'group' => 'notifications', 'label' => 'Email the result to the lead (when email provided)', 'position' => 2],
+            ['key' => 'notify_status_change', 'value' => '1', 'type' => 'bool', 'group' => 'notifications', 'label' => 'Email the lead when their status reaches a client-facing stage', 'position' => 3],
+            ['key' => 'admin_email_locale', 'value' => 'ar', 'type' => 'string', 'group' => 'notifications', 'label' => 'Language of internal sales emails (ar / en)', 'position' => 5],
             ['key' => 'admin_notification_emails', 'value' => '', 'type' => 'string', 'group' => 'notifications', 'label' => 'Sales notification recipients', 'hint' => 'Comma separated. Falls back to MAIL_FROM_ADDRESS.', 'position' => 3],
-            ['key' => 'footer_note', 'value' => '© Creative Mark — Creating The Future', 'type' => 'string', 'group' => 'general', 'label' => 'Public footer note', 'position' => 1],
-            ['key' => 'result_disclaimer', 'value' => 'النتيجة تقييم مبدئي لمستوى الجاهزية، وليست استشارة قانونية أو مالية أو قرار تأسيس.', 'type' => 'text', 'group' => 'general', 'label' => 'Result disclaimer', 'position' => 2],
+            ['key' => 'footer_note', 'value' => '© Creative Mark — Creating The Future', 'type' => 'string', 'group' => 'general', 'label' => 'Public footer note (Arabic)', 'position' => 1],
+            ['key' => 'footer_note_en', 'value' => '© Creative Mark — Creating The Future', 'type' => 'string', 'group' => 'general', 'label' => 'Public footer note (English)', 'position' => 2],
+            ['key' => 'result_disclaimer', 'value' => 'النتيجة تقييم مبدئي لمستوى الجاهزية، وليست استشارة قانونية أو مالية أو قرار تأسيس.', 'type' => 'text', 'group' => 'general', 'label' => 'Result disclaimer (Arabic)', 'position' => 3],
+            ['key' => 'result_disclaimer_en', 'value' => 'This result is a preliminary readiness indication — not legal, financial or incorporation advice.', 'type' => 'text', 'group' => 'general', 'label' => 'Result disclaimer (English)', 'position' => 4],
         ];
 
         foreach ($settings as $setting) {
@@ -127,6 +131,17 @@ class PlatformSeeder extends Seeder
 </table>
 <p><a href="{{lead_url}}">افتح الـLead في الداشبورد</a></p>
 HTML,
+            ],
+        );
+
+        NotificationTemplate::updateOrCreate(
+            ['key' => 'lead_status_update'],
+            [
+                'audience' => 'customer',
+                'name' => 'Customer — status update',
+                'subject' => 'تحديث بخصوص طلبك مع Creative Mark',
+                'is_active' => true,
+                'body' => '<p>حابين نطمنك على آخر تحديث في طلبك مع Creative Mark.</p>',
             ],
         );
 

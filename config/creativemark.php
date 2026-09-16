@@ -10,6 +10,22 @@
 
 return [
 
+    /*
+    | Supported locales. `base_locale` is the language the editable database
+    | content (quiz, results, CMS) is written in; everything else lives in a
+    | `translations` JSON column next to it.
+    */
+    'base_locale' => 'ar',
+
+    // When true, a first-time visitor's Accept-Language header picks the
+    // language. Off by default so everyone lands on the Arabic experience.
+    'auto_detect_locale' => (bool) env('LOCALE_AUTO_DETECT', false),
+
+    'locales' => [
+        'ar' => ['name' => 'العربية', 'native' => 'العربية', 'dir' => 'rtl', 'flag' => '🇸🇦', 'html' => 'ar', 'iso' => 'ar_SA'],
+        'en' => ['name' => 'English', 'native' => 'English', 'dir' => 'ltr', 'flag' => '🇬🇧', 'html' => 'en', 'iso' => 'en_GB'],
+    ],
+
     'brand' => [
         'name' => env('BRAND_NAME', 'Creative Mark'),
         'tagline' => env('BRAND_TAGLINE', 'Creating The Future'),

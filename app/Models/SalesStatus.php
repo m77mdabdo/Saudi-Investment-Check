@@ -2,17 +2,19 @@
 
 namespace App\Models;
 
+use App\Support\HasTranslations;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 
 class SalesStatus extends Model
 {
-    use HasFactory;
+    use HasFactory, HasTranslations;
 
-    protected $fillable = ['key', 'label', 'color', 'position', 'is_default', 'is_active'];
+    protected $fillable = ['key', 'label', 'color', 'position', 'is_default', 'is_active', 'notify_client', 'translations'];
 
-    protected $casts = ['is_default' => 'boolean', 'is_active' => 'boolean'];
+    protected $casts = [
+        'translations' => 'array','is_default' => 'boolean', 'is_active' => 'boolean', 'notify_client' => 'boolean'];
 
     protected static function booted(): void
     {
