@@ -1,656 +1,180 @@
-# Saudi Investment Check 🇸🇦
+# Saudi-Ready Check — Creative Mark 🇸🇦
 
-A mobile-first Saudi market readiness assessment platform built for Creative Mark.
+A mobile-first **Saudi market readiness assessment + lead generation + mini CRM** built for
+Creative Mark and the **TECHNE — Alexandria 2026** event.
 
-The platform helps companies quickly evaluate their readiness to enter the Saudi Arabian market through a short interactive assessment and connects qualified leads with Creative Mark consultants.
+A visitor scans a QR code, answers 8 tap-only questions in under a minute, leaves their
+contact details, and gets a scored readiness result. The sales team sees the lead — with its
+source, score, classification and answers — in the console immediately.
 
-## 🌐 Production Domain
-
-https://investment.dareljamila.com
-
-## 🎯 Project Objective
-
-Saudi Investment Check is designed to provide a fast, simple, and interactive assessment for companies considering entering the Saudi market.
-
-The complete user journey is:
-
-```text
-QR Code
-   ↓
-Landing Page
-   ↓
-Start Assessment
-   ↓
-8 Questions
-   ↓
-Lead Capture
-   ↓
-Server-Side Score Calculation
-   ↓
-Readiness Result
-   ↓
-Consultation / Meeting CTA
 ```
-
-The target completion time is approximately **60–90 seconds**.
-
----
-
-## ✨ Main Features
-
-### Landing Page
-
-* Mobile-first design
-* Premium corporate appearance
-* Creative Mark branding
-* Arabic RTL interface
-* Fast loading
-* QR-code friendly
-* Clear call-to-action
-
-### Interactive Assessment
-
-The assessment contains:
-
-* 7 scored questions
-* 1 open-ended question
-* One question per screen
-* Progress indicator
-* Previous / Next navigation
-* Fast interaction
-* Mobile-friendly answer cards
-
-### Lead Capture
-
-The platform collects:
-
-* Full name
-* Company name
-* WhatsApp number
-* Email address
-* Consent to contact
-
-It also stores the user's assessment answers and final classification.
-
-### Readiness Scoring
-
-The scoring system evaluates six readiness dimensions:
-
-1. Company Stage
-2. Saudi Entry Goal
-3. Saudi Market Traction
-4. Entry Timeline
-5. Budget Readiness
-6. Operational Readiness
-
-Maximum score:
-
-```text
-12 points
-```
-
-### Result Classification
-
-| Score | Classification |
-| ----- | -------------- |
-| 9–12  | READY          |
-| 5–8   | NEEDS PREP     |
-| 0–4   | EARLY STAGE    |
-
-Lead classifications:
-
-```text
-READY       → Hot Lead
-NEEDS PREP  → Warm Lead
-EARLY STAGE → Early Lead
-```
-
-The final score is calculated **server-side** to prevent manipulation from the browser.
-
----
-
-## 📝 Assessment Questions
-
-### Q1 — Company Stage
-
-* Idea / under establishment
-* Early operation / growth
-* Operating company with customers and sales
-* Established company seeking expansion
-
-### Q2 — Business Sector
-
-Examples:
-
-* Trading & Distribution
-* Contracting & Finishing
-* Technology & Software
-* Services & Consulting
-* Manufacturing
-* Medical
-* Training & Education
-* Food & Agriculture
-* E-commerce
-* Marketing & Media
-* Other
-
-### Q3 — Saudi Entry Goal
-
-The user identifies the primary reason for entering the Saudi market.
-
-### Q4 — Saudi Market Traction
-
-The user indicates whether they currently have:
-
-* Customers
-* Sales
-* Leads
-* Negotiations
-* Potential contracts
-* No current traction
-
-### Q5 — Timeline
-
-The user selects the expected Saudi market entry timeline:
-
-* 0–3 months
-* 3–6 months
-* 6–12 months
-* No defined timeline
-
-### Q6 — Budget Readiness
-
-The user indicates whether a budget has been allocated for entering the Saudi market.
-
-### Q7 — Operational Readiness
-
-The user evaluates their current operational readiness, team, and systems.
-
-### Q8 — Main Concern
-
-An open-ended question captures the user's main concern regarding entering Saudi Arabia.
-
-Example:
-
-> Cost? Licensing? Is my activity permitted? Is the market suitable? Where should I start?
-
-This answer is stored as a qualitative sales insight.
-
----
-
-## 🧮 Scoring
-
-Each scored question uses a value between:
-
-```text
-0
-1
-2
-```
-
-Maximum score:
-
-```text
-12
-```
-
-The Laravel backend calculates the final score.
-
-Example:
-
-```php
-$score = 0;
-
-$score += $scores['company_stage'][$request->company_stage] ?? 0;
-$score += $scores['saudi_goal'][$request->saudi_goal] ?? 0;
-$score += $scores['saudi_traction'][$request->saudi_traction] ?? 0;
-$score += $scores['timeline'][$request->timeline] ?? 0;
-$score += $scores['budget_readiness'][$request->budget_readiness] ?? 0;
-$score += $scores['operational_readiness'][$request->operational_readiness] ?? 0;
-```
-
-Result:
-
-```php
-if ($score >= 9) {
-    $result = 'ready';
-} elseif ($score >= 5) {
-    $result = 'needs_prep';
-} else {
-    $result = 'early_stage';
-}
+QR ▸ Landing ▸ 8 questions ▸ Lead form ▸ Server-side score ▸ Result + CTA
+                                                   │
+                                     Email alert + dashboard notification
 ```
 
 ---
 
-## 📊 Lead Data
+## Stack
 
-Each lead may contain:
-
-```text
-Name
-Company Name
-WhatsApp
-Email
-Consent
-Company Stage
-Sector
-Sector Other
-Saudi Entry Goal
-Saudi Market Traction
-Timeline
-Budget Readiness
-Operational Readiness
-Main Question
-Score
-Result
-Lead Classification
-Source
-UTM Source
-UTM Medium
-UTM Campaign
-UTM Content
-Device
-IP Address
-User Agent
-Session ID
-Created At
-```
+| Layer | Choice |
+| --- | --- |
+| Framework | Laravel 12 (PHP 8.2+) |
+| Frontend | Blade + Tailwind CSS 4 + Alpine.js, built with Vite |
+| Charts | Chart.js (admin only) |
+| Database | MySQL 8 (SQLite in-memory for tests) |
+| Mail | Laravel Mail over SMTP |
+| Auth | Session auth + optional Google OAuth (Socialite), staff only |
+| Export | Laravel Excel (`maatwebsite/excel`) |
+| Imagery | Pexels API, cached in the database, with bundled local fallbacks |
 
 ---
 
-## 📱 QR Source Tracking
-
-QR campaigns can use source parameters.
-
-Example:
-
-```text
-https://investment.dareljamila.com?source=booth_qr
-```
-
-Possible sources:
-
-```text
-booth_qr
-walking_qr
-portfolio
-campaign
-direct
-```
-
-The source is preserved throughout the assessment and stored with the lead.
-
----
-
-## 📈 Analytics
-
-The platform is designed to track the complete conversion funnel.
-
-Events include:
-
-```text
-landing_page_view
-quiz_started
-quiz_question_completed
-quiz_completed
-lead_form_viewed
-lead_submitted
-result_ready
-result_needs_prep
-result_early_stage
-cta_clicked
-meeting_clicked
-```
-
-This allows the team to measure:
-
-```text
-QR Scans
-   ↓
-Landing Page Views
-   ↓
-Quiz Starts
-   ↓
-Quiz Completions
-   ↓
-Lead Submissions
-   ↓
-Consultation / Meeting Requests
-```
-
----
-
-## 🎨 Design System
-
-Primary visual direction:
-
-```text
-Black / Dark Charcoal
-Gold
-White
-Muted Gray
-```
-
-Suggested colors:
-
-```css
---black: #090909;
---charcoal: #141414;
---gold: #C9A45C;
---white: #FFFFFF;
---muted: #A7A7A7;
-```
-
-Design principles:
-
-* Premium
-* Corporate
-* Saudi business focused
-* Mobile-first
-* Minimal
-* Fast
-* High contrast
-* Large touch targets
-* No unnecessary animations
-
----
-
-## 🛠 Technology Stack
-
-### Backend
-
-* Laravel 12
-* PHP 8.5+
-* MySQL
-
-### Frontend
-
-* Blade
-* Tailwind CSS
-* Alpine.js
-* Vite
-
-### Development
-
-* Git
-* GitHub
-* Composer
-* NPM
-
-### Production
-
-* Hostinger
-* MySQL
-* HTTPS / SSL
-* Production Laravel configuration
-
----
-
-## 📁 Planned Project Structure
-
-```text
-app/
-├── Http/
-│   ├── Controllers/
-│   │   ├── LandingController.php
-│   │   ├── QuizController.php
-│   │   ├── LeadController.php
-│   │   └── Admin/
-│   │       └── LeadController.php
-│   │
-│   ├── Requests/
-│   │   └── StoreLeadRequest.php
-│   │
-│   └── Middleware/
-│
-├── Models/
-│   ├── Lead.php
-│   └── AnalyticsEvent.php
-│
-└── Services/
-    ├── QuizScoringService.php
-    └── AnalyticsService.php
-
-database/
-├── migrations/
-└── seeders/
-
-resources/
-├── views/
-│   ├── landing.blade.php
-│   ├── quiz.blade.php
-│   ├── lead-form.blade.php
-│   ├── result.blade.php
-│   └── admin/
-│
-├── css/
-└── js/
-
-routes/
-├── web.php
-└── admin.php
-```
-
----
-
-## ⚙️ Installation
-
-Clone the repository:
-
-```bash
-git clone <repository-url>
-```
-
-Enter the project:
-
-```bash
-cd saudi-investment-check
-```
-
-Install PHP dependencies:
+## Quick start
 
 ```bash
 composer install
-```
-
-Install frontend dependencies:
-
-```bash
 npm install
-```
-
-Create environment file:
-
-```bash
-cp .env.example .env
-```
-
-Generate application key:
-
-```bash
+cp .env.example .env            # then fill in your own values
 php artisan key:generate
-```
 
-Configure the database inside:
+php artisan migrate --seed      # prints the generated admin password once
+php artisan storage:link        # event logos are stored on the public disk
+php artisan media:sync          # optional: pull background imagery from Pexels
 
-```text
-.env
-```
-
-Run migrations:
-
-```bash
-php artisan migrate
-```
-
-Build frontend assets:
-
-```bash
-npm run build
-```
-
-Start the development server:
-
-```bash
+npm run build                   # or: npm run dev
 php artisan serve
 ```
 
+* Public journey → `http://localhost:8000`
+* Staff console → `http://localhost:8000/admin`
+
+### Admin account
+
+`db:seed` creates the first administrator from `ADMIN_EMAIL` / `ADMIN_NAME`.
+If `ADMIN_PASSWORD` is empty, a strong password is generated and **printed once** in the
+seeder output — store it in a password manager and rotate it after first login.
+More users are created in **Admin → Users & Roles**.
+
+Roles: `admin` (everything), `manager` (content + leads), `sales` (leads only).
+
 ---
 
-## 🔐 Environment Variables
+## Environment
 
-Sensitive credentials must never be committed to GitHub.
+Every integration degrades gracefully when its variables are absent.
 
-Example:
+| Group | Variables | Notes |
+| --- | --- | --- |
+| App | `APP_*`, `DB_*`, `SESSION_*`, `CACHE_STORE`, `QUEUE_CONNECTION` | Standard Laravel |
+| Mail | `MAIL_MAILER`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_ENCRYPTION`, `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME` | Lead + customer emails |
+| Pexels | `PEXELS_API_KEY`, `PEXELS_CACHE_TTL`, `PEXELS_TIMEOUT` | Missing key → bundled fallback images |
+| Google OAuth | `OAUTH_PROVIDERS`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL`, `GOOGLE_ALLOWED_DOMAINS`, `GOOGLE_AUTO_REGISTER` | Staff sign-in only; hidden when unset |
+| CTA links | `CREATIVE_MARK_WHATSAPP_URL`, `BOOKING_URL`, `CHECKLIST_URL`, `CREATIVE_MARK_PHONE`, `CREATIVE_MARK_EMAIL`, `CREATIVE_MARK_WEBSITE` | Defaults; Admin → Settings overrides them |
+| Notifications | `LEAD_NOTIFY_ADMIN`, `LEAD_NOTIFY_CUSTOMER`, `LEAD_NOTIFY_EMAILS` | Also editable in Settings |
+| Branding | `BRAND_NAME`, `BRAND_TAGLINE`, `BRAND_LOGO` | Drop the logo at `public/images/creative-mark-logo.png` |
+| Hosting | `TRUSTED_PROXIES` | Set to your load balancer's IPs (or `*`) only when the app sits behind one |
 
-```env
-APP_NAME="Saudi Investment Check"
-APP_ENV=local
-APP_KEY=
-APP_DEBUG=true
-APP_URL=http://127.0.0.1:8000
+**Secrets live in `.env` only.** They are read through `config/services.php`,
+`config/mail.php` and `config/creativemark.php`, never hard-coded, never sent to the browser,
+and `.env` is git-ignored.
 
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=
-DB_USERNAME=
-DB_PASSWORD=
+---
 
-CREATIVE_MARK_WHATSAPP=
-BOOKING_URL=
+## How scoring works
+
+Six of the eight questions are scored 0/1/2 → **maximum 12 points**. Scoring always happens
+server-side in `App\Services\ScoringService`: the browser only ever submits *option keys*,
+which are validated against the live quiz before any points are read from the database.
+
+| Score | Result | Classification | Tone |
+| --- | --- | --- | --- |
+| 9–12 | READY | Hot Lead | Green |
+| 5–8 | NEEDS PREP | Warm Lead | Amber |
+| 0–4 | EARLY STAGE | Early Lead | Coral |
+
+Bands, copy, bullets and CTAs are rows in `result_rules` — edit them in **Admin → Results**,
+no deployment required.
+
+---
+
+## Admin console
+
+| Area | What you can do |
+| --- | --- |
+| **Dashboard** | Overview KPIs, funnel, leads trend, classification, sources, sectors, recent leads, hot-lead follow-up queue |
+| **Leads** | CRM list with filters (date, event, result, status, source, sector, timeline, owner) + search, inline status changes, WhatsApp/call/email actions, Excel export |
+| **Lead detail** | Contact, answers, score, attribution (source/UTM/device), sales status, assignment, internal notes, activity timeline, email log |
+| **Analytics** | Visits → starts → completions → leads → meetings, event counters, devices, sources, sectors |
+| **Quiz** | Build questions and options, scores, "other" free-text options, ordering, activate/deactivate, live preview |
+| **Results** | Score bands, headlines, body, bullets, highlight, CTA labels and URLs, disclaimer; warns about uncovered score gaps |
+| **CMS** | Every public string: hero, description, benefit cards, quiz intro, lead form copy, consent text, footer, SEO |
+| **Media** | Search Pexels per slot, pin an image, auto-refresh, or fall back to the bundled artwork |
+| **Events** | Multiple events, default event, dates, status; every lead belongs to one |
+| **QR Sources** | Create tracked sources, copy their URL, see leads and hot leads per source |
+| **Email templates** | Subject/body with `{{name}}`, `{{company}}`, `{{score}}`, `{{result}}`, `{{classification}}`, `{{source}}`, `{{event}}`, `{{main_question}}`, `{{cta_url}}`… plus send-preview and logs |
+| **Settings** | CTA links, notification recipients and toggles, sales statuses, integration health |
+| **Users & Roles** | Create staff, change roles, deactivate accounts |
+
+### QR sources
+
+Each source has a slug; both of these carry attribution through the whole journey and land
+on the lead record:
+
+```
+https://your-domain/?source=booth_qr
+https://your-domain/qr/booth_qr
 ```
 
-Production credentials must be configured separately on the server.
+Seeded: `walking_qr`, `booth_qr`, `portfolio_qr`, `vip_qr`, `partner_qr`.
 
 ---
 
-## 🔒 Security
+## Data model
 
-The application should follow Laravel security best practices.
-
-Required:
-
-* CSRF protection
-* Server-side validation
-* Server-side score calculation
-* Rate limiting
-* Secure environment variables
-* Authentication for admin areas
-* Authorization for administrative actions
-* Secure database credentials
-* HTTPS in production
-* Input validation and sanitization
-* Consent tracking
-* Application logging
-
-The browser must never be trusted with the final lead score.
+`users`, `events`, `landing_pages`, `quiz_questions`, `quiz_options`, `result_rules`,
+`sales_statuses`, `leads`, `lead_answers`, `lead_notes`, `analytics_events`, `qr_sources`,
+`notification_templates`, `notification_logs`, `admin_notifications`, `settings`,
+`media_assets` — all created by `database/migrations/2026_01_01_000100_create_platform_core_tables.php`
+with foreign keys and indexes on the columns the dashboard filters by.
 
 ---
 
-## 📤 Lead Management
+## Security
 
-The administrative area is planned to provide:
-
-* Lead list
-* Lead details
-* Result filtering
-* Sector filtering
-* Timeline filtering
-* Source filtering
-* Date filtering
-* Lead classification
-* Score
-* Assessment answers
-* Excel export
-* Funnel analytics
+* Server-side scoring; option keys validated against the live quiz
+* CSRF on every form, rate limiting per endpoint (submit, autosave, tracking, login)
+* Honeypot field + one-lead-per-session duplicate protection
+* Result pages open only for the session that created them, or via a signed URL
+* Role-based authorization on every admin route, login throttling, deactivation support
+* IP addresses stored only as a keyed hash; no secrets in HTML, JS or logs
+* Set `APP_DEBUG=false` and `SESSION_SECURE_COOKIE=true` in production
 
 ---
 
-## 🚀 Deployment
+## Tests
 
-Production domain:
-
-```text
-https://investment.dareljamila.com
+```bash
+php artisan test
 ```
 
-The production deployment will include:
-
-```text
-Laravel
-↓
-Production .env
-↓
-MySQL
-↓
-Composer dependencies
-↓
-Frontend build
-↓
-Database migrations
-↓
-Storage configuration
-↓
-SSL
-↓
-Domain / Subdomain
-```
-
-Production commands will be documented after the first deployment.
+71 tests covering the public journey, scoring boundaries (12/9/8/5/4/0), validation,
+duplicate submissions, QR/UTM attribution, analytics, notifications, media fallbacks,
+security, authorization, and every admin workflow.
 
 ---
 
-## 🔗 Project Identity
+## Deployment
 
-**Project:** Saudi Investment Check
-
-**Brand:** Creative Mark
-
-**Production URL:**
-
-```text
-https://investment.dareljamila.com
+```bash
+composer install --no-dev --optimize-autoloader
+npm ci && npm run build
+php artisan migrate --force
+php artisan storage:link
+php artisan config:cache && php artisan route:cache && php artisan view:cache
+php artisan media:sync          # optional
 ```
 
-**Purpose:**
-
-Saudi market readiness assessment and lead qualification.
-
----
-
-## 📌 Project Status
-
-Current stage:
-
-```text
-🚧 Initial Development
-```
-
-Planned milestones:
-
-* [ ] Laravel 12 setup
-* [ ] Git repository
-* [ ] Database structure
-* [ ] Landing page
-* [ ] Quiz engine
-* [ ] Scoring service
-* [ ] Lead capture
-* [ ] Result pages
-* [ ] QR source tracking
-* [ ] Analytics events
-* [ ] Admin dashboard
-* [ ] Excel export
-* [ ] Production deployment
-* [ ] SSL / domain configuration
-
----
-
-## 📄 Disclaimer
-
-The assessment provides an initial indication of a company's readiness to explore entering the Saudi market.
-
-It is not a final assessment of legal eligibility, licensing requirements, or regulatory approval. Final requirements depend on the company's activity, structure, ownership, and applicable Saudi regulations and should be reviewed with the appropriate specialists.
-
-
+Point the web root at `public/`, set `APP_ENV=production`, `APP_DEBUG=false`, and run
+`php artisan queue:work` if you switch mail to a queued connection.
+After changing `.env` on a cached deployment, re-run `php artisan config:cache`.
