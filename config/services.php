@@ -35,4 +35,17 @@ return [
         ],
     ],
 
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_CALLBACK_URL'),
+    ],
+
+    'pexels' => [
+        'key' => env('PEXELS_API_KEY'),
+        'endpoint' => env('PEXELS_ENDPOINT', 'https://api.pexels.com/v1'),
+        'cache_ttl' => (int) env('PEXELS_CACHE_TTL', 86400),
+        'timeout' => (float) env('PEXELS_TIMEOUT', 4),
+    ],
+
 ];
