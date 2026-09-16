@@ -652,3 +652,5 @@ Planned milestones:
 The assessment provides an initial indication of a company's readiness to explore entering the Saudi market.
 
 It is not a final assessment of legal eligibility, licensing requirements, or regulatory approval. Final requirements depend on the company's activity, structure, ownership, and applicable Saudi regulations and should be reviewed with the appropriate specialists.
+
+
