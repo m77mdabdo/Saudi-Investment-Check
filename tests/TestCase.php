@@ -108,4 +108,23 @@ abstract class TestCase extends BaseTestCase
     {
         return Lead::query()->latest('id')->first();
     }
+
+    /**
+     * Render a mailable in the language it was built for.
+     *
+     * Laravel wraps rendering in `withLocale()` during send(); calling render()
+     * by hand in a test does not, so it would otherwise pick up whatever locale
+     * the previous assertion happened to leave behind.
+     */
+    protected function renderMail(\App\Mail\BrandedMail $mail): string
+    {
+        $original = app()->getLocale();
+        app()->setLocale($mail->lang);
+
+        try {
+            return $mail->render();
+        } finally {
+            app()->setLocale($original);
+        }
+    }
 }

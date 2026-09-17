@@ -30,18 +30,39 @@ class NotificationService
 
     /* ---------------------------------------------------------------- Leads */
 
+    /**
+     * Runs synchronously inside the submit request — no queue, no worker, no cron.
+     *
+     * Each step is isolated: a dashboard-notification failure must not cancel the
+     * emails, and a failing sales email must not cancel the customer's email.
+     */
     public function leadCreated(Lead $lead): void
     {
-        $lead->loadMissing(['answers.question', 'answers.option', 'rule', 'event', 'qrSource']);
+        $this->safely('load_relations', fn () => $lead->loadMissing([
+            'answers.question', 'answers.option', 'rule', 'event', 'qrSource',
+        ]));
 
-        $this->createAdminNotification($lead);
+        $this->safely('admin_notification', fn () => $this->createAdminNotification($lead));
 
         if ($this->enabled('notify_admin', config('creativemark.notifications.notify_admin'))) {
-            $this->sendAdminAlert($lead);
+            $this->safely('sales_email', fn () => $this->sendAdminAlert($lead));
         }
 
         if ($lead->email && $this->enabled('notify_customer', config('creativemark.notifications.notify_customer'))) {
-            $this->sendCustomerResult($lead);
+            $this->safely('customer_email', fn () => $this->sendCustomerResult($lead));
+        }
+    }
+
+    /** Never let one notification step take the others (or the request) down. */
+    protected function safely(string $step, callable $callback): void
+    {
+        try {
+            $callback();
+        } catch (\Throwable $e) {
+            Log::error('notification.step_failed', [
+                'step' => $step,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 
@@ -209,20 +230,51 @@ class NotificationService
         return filled($subject) ? $template->renderString($subject, $this->variables($lead, $locale)) : null;
     }
 
+    /**
+     * Editable templates, memoised per instance only.
+     *
+     * A `static` cache here would survive for the whole PHP process, so an
+     * admin editing a subject line (or adding a translation) would keep seeing
+     * the old one until the process restarted.
+     *
+     * @var array<string,NotificationTemplate|null>
+     */
+    protected array $templates = [];
+
     protected function template(string $key): ?NotificationTemplate
     {
-        static $cache = [];
-
-        if (! array_key_exists($key, $cache)) {
-            $cache[$key] = NotificationTemplate::query()->where('key', $key)->where('is_active', true)->first();
+        if (! array_key_exists($key, $this->templates)) {
+            $this->templates[$key] = NotificationTemplate::query()
+                ->where('key', $key)
+                ->where('is_active', true)
+                ->first();
         }
 
-        return $cache[$key];
+        return $this->templates[$key];
     }
+
+    /**
+     * Notification switches, readable under either naming convention so a
+     * setting saved as `notify_sales_team` behaves like `notify_admin`.
+     *
+     * @var array<string,string>
+     */
+    public const SETTING_ALIASES = [
+        'notify_admin' => 'notify_sales_team',
+        'notify_status_change' => 'notify_on_status_change',
+    ];
 
     public function enabled(string $key, mixed $default = true): bool
     {
         $value = $this->settings->get($key);
+
+        if ($value === null && isset(self::SETTING_ALIASES[$key])) {
+            $value = $this->settings->get(self::SETTING_ALIASES[$key]);
+        }
+
+        if ($value === null && ($alias = array_search($key, self::SETTING_ALIASES, true)) !== false) {
+            $value = $this->settings->get($alias);
+        }
 
         return $value === null ? (bool) $default : filter_var($value, FILTER_VALIDATE_BOOL);
     }

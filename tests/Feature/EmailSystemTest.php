@@ -52,7 +52,7 @@ class EmailSystemTest extends TestCase
         $this->submitQuiz(['locale' => 'en']);
 
         Mail::assertSent(LeadResultMail::class, function (LeadResultMail $mail) {
-            $rendered = $mail->render();
+            $rendered = $this->renderMail($mail);
 
             return str_contains($rendered, 'Your result is ready')
                 && str_contains($rendered, 'dir="ltr"');
@@ -66,7 +66,7 @@ class EmailSystemTest extends TestCase
         $this->submitQuiz(['locale' => 'ar']);
 
         Mail::assertSent(LeadResultMail::class, function (LeadResultMail $mail) {
-            $rendered = $mail->render();
+            $rendered = $this->renderMail($mail);
 
             return str_contains($rendered, 'dir="rtl"')
                 && str_contains($rendered, 'نتيجة تقييمك جاهزة');
@@ -82,7 +82,7 @@ class EmailSystemTest extends TestCase
         $lead = $this->latestLead();
 
         Mail::assertSent(NewLeadMail::class, function (NewLeadMail $mail) use ($lead) {
-            $html = $mail->render();
+            $html = $this->renderMail($mail);
 
             return str_contains($html, $lead->name)
                 && str_contains($html, $lead->company)
@@ -305,6 +305,22 @@ class EmailSystemTest extends TestCase
         $this->assertStringContainsString('not a real SMTP server', $problems);
         $this->assertStringContainsString('2525', $problems);
         $this->assertStringContainsString('username or password is missing', $problems);
+    }
+
+    public function test_an_edited_subject_takes_effect_on_the_next_send(): void
+    {
+        Mail::fake();
+
+        // Regression: the template lookup used to be memoised in a `static`
+        // array, so an edited subject was served stale for the life of the
+        // PHP process (and, in tests, leaked between cases).
+        \App\Models\NotificationTemplate::query()
+            ->where('key', 'customer_result')
+            ->update(['subject' => 'Updated subject for {{company}}']);
+
+        $this->submitQuiz();
+
+        Mail::assertSent(\App\Mail\LeadResultMail::class, fn ($mail) => str_contains($mail->subjectLine, 'Updated subject for XYZ Technologies'));
     }
 
     public function test_statuses_can_be_flagged_as_client_facing(): void
