@@ -98,7 +98,7 @@ class QuizController extends Controller
             ->filter(fn ($v) => $v !== null)
             ->all();
 
-        $request->session()->put(config('creativemark.quiz.session_key'), [
+        $request->session()->put(config('creativemark.quiz.session_key', 'smrc.quiz'), [
             'answers' => $answers,
             'index' => (int) ($validated['index'] ?? 0),
             'updated_at' => now()->timestamp,
@@ -144,7 +144,7 @@ class QuizController extends Controller
         $request->session()->put('smrc.last_lead_uuid', $lead->uuid);
         $request->session()->put('smrc.last_lead_at', now()->timestamp);
         $request->session()->push('smrc.leads', $lead->uuid);
-        $request->session()->forget(config('creativemark.quiz.session_key'));
+        $request->session()->forget(config('creativemark.quiz.session_key', 'smrc.quiz'));
 
         $this->analytics->record('lead_submitted', $request, $lead, ['score' => $lead->score]);
         $this->analytics->record(match ($lead->result_key) {
@@ -216,7 +216,7 @@ class QuizController extends Controller
 
     protected function savedAnswers(Request $request): array
     {
-        $state = $request->session()->get(config('creativemark.quiz.session_key'), []);
+        $state = $request->session()->get(config('creativemark.quiz.session_key', 'smrc.quiz'), []);
         $answers = is_array($state['answers'] ?? null) ? $state['answers'] : [];
 
         if ($old = old('answers')) {

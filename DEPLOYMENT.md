@@ -114,9 +114,16 @@ composer install --no-dev --optimize-autoloader --no-interaction
 php artisan migrate --force                 # additive migrations only
 php artisan db:seed --class=EnglishContentSeeder --force   # idempotent
 
-php artisan config:clear && php artisan config:cache
-php artisan route:clear  && php artisan route:cache
-php artisan view:clear   && php artisan view:cache
+# Clear EVERYTHING first, then rebuild. A config cache left over from an older
+# release is what caused the 500 (TypeError in Locale::meta) after a deploy:
+# the cached file had no `creativemark.locales` key, so the new code read
+# nothing back. optimize:clear drops config, routes, views, events and cache.
+php artisan optimize:clear
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+
+php artisan about                           # production / debug OFF / caches on
 
 php artisan email:diagnose                  # confirms SMTP from the server itself
 php artisan up || true
@@ -133,10 +140,12 @@ Then, from any machine:
 1. **Git** → *Deploy* (hPanel pulls the repository into `public_html`).
 2. **File Manager** → delete `bootstrap/cache/config.php` and `bootstrap/cache/routes-v7.php`
    if they exist (this is the safe equivalent of `config:clear`).
-3. **Cron jobs** → add a one-off job, run it once, then delete it:
+3. **File Manager** → also delete `bootstrap/cache/events.php` and everything in
+   `storage/framework/views/` (the no-SSH equivalent of `optimize:clear`).
+4. **Cron jobs** → add a one-off job, run it once, then delete it:
    `/usr/bin/php ~/domains/investment.dareljamila.com/public_html/artisan migrate --force`
-4. Repeat step 3 with `db:seed --class=EnglishContentSeeder --force` when content changes.
-5. Run `scripts/verify-production.sh` from your laptop.
+5. Repeat step 4 with `db:seed --class=EnglishContentSeeder --force` when content changes.
+6. Run `scripts/verify-production.sh` from your laptop.
 
 `composer install` is only needed when `composer.lock` changes; `npm run build` is **never**
 run on the server — assets are built locally and committed.
@@ -173,7 +182,8 @@ exist yet, and the site loads unstyled.
 | 403 on every URL | Root `.htaccess` missing or emptied | Restore it from the repo (`git checkout -- .htaccess`) |
 | Site loads unstyled, `/build/...` 404 | `public/build` not deployed or stale | Build locally, commit, pull again |
 | `/quiz` 404 but `/` works | `public/.htaccess` missing or `AllowOverride None` | Restore the file / ask support to allow overrides |
-| 500 after a deploy | Stale `bootstrap/cache/config.php`, or `vendor/` out of date | `config:clear` + `composer install` |
+| 500 after a deploy | **Stale `bootstrap/cache/config.php` from the previous release**, or `vendor/` out of date | `php artisan optimize:clear` then re-cache; `composer install` if `composer.lock` changed |
+| `TypeError … must be of type array, null returned` | Old config cache missing new config keys | `php artisan optimize:clear` (the code now falls back on its own, but always clear) |
 | Uploaded images 404 | `public/storage` is a plain file, not a symlink | `rm public/storage && php artisan storage:link` (or recreate with `ln -s ../storage/app/public public/storage`) |
 | Emails silently not sent | Wrong mailer, cached config, or blocked SMTP port | `php artisan email:diagnose`, then Admin → Email logs |
 | Pull refuses to run | Untracked file conflicts with a tracked one | Back it up, delete it, pull again (see § 4) |

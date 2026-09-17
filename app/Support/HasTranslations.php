@@ -18,7 +18,7 @@ trait HasTranslations
         $locale ??= app()->getLocale();
         $fallback = $this->{$field};
 
-        if ($locale === config('creativemark.base_locale', 'ar')) {
+        if ($locale === \App\Support\Locale::default()) {
             return $fallback;
         }
 
@@ -33,7 +33,7 @@ trait HasTranslations
         $locale ??= app()->getLocale();
         $fallback = (array) ($this->{$field} ?? []);
 
-        if ($locale === config('creativemark.base_locale', 'ar')) {
+        if ($locale === \App\Support\Locale::default()) {
             return $fallback;
         }
 

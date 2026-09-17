@@ -18,15 +18,67 @@ class Locale
     public const SESSION_KEY = 'smrc.locale';
     public const COOKIE = 'smrc_locale';
 
+    /**
+     * Canonical metadata for every language the product ships with.
+     *
+     * This lives in code — not only in config — on purpose. `config/creativemark.php`
+     * may extend or override any of it, but the locale system must never depend on
+     * a config key being present: a stale `bootstrap/cache/config.php` (an old release
+     * cached before these keys existed) used to make meta() return null, which broke
+     * every page with a TypeError. Code is the floor, config is the override.
+     */
+    public const LOCALES = [
+        'ar' => [
+            'code' => 'ar',
+            'name' => 'Arabic',
+            'native' => 'العربية',
+            'dir' => 'rtl',
+            'flag' => '🇸🇦',
+            'html' => 'ar',
+            'iso' => 'ar_SA',
+            'hreflang' => 'ar',
+        ],
+        'en' => [
+            'code' => 'en',
+            'name' => 'English',
+            'native' => 'English',
+            'dir' => 'ltr',
+            'flag' => '🇬🇧',
+            'html' => 'en',
+            'iso' => 'en_GB',
+            'hreflang' => 'en',
+        ],
+    ];
+
+    /** Used when nothing else can be resolved. Always a key of self::LOCALES. */
+    public const FALLBACK = 'ar';
+
+    /** Keys every metadata array is guaranteed to expose. */
+    public const META_KEYS = ['code', 'name', 'native', 'dir', 'flag', 'html', 'iso', 'hreflang'];
+
     /** @return array<int,string> */
     public static function supported(): array
     {
-        return array_keys(config('creativemark.locales', ['ar' => [], 'en' => []]));
+        $configured = config('creativemark.locales');
+
+        $codes = is_array($configured)
+            ? array_values(array_filter(array_keys($configured), fn ($code) => is_string($code) && $code !== ''))
+            : [];
+
+        return $codes !== [] ? $codes : array_keys(self::LOCALES);
     }
 
+    /** The language the un-prefixed URLs and the base database columns use. */
     public static function default(): string
     {
-        return config('creativemark.base_locale', 'ar');
+        $configured = config('creativemark.base_locale');
+        $supported = static::supported();
+
+        if (is_string($configured) && in_array($configured, $supported, true)) {
+            return $configured;
+        }
+
+        return in_array(self::FALLBACK, $supported, true) ? self::FALLBACK : $supported[0];
     }
 
     public static function isSupported(?string $locale): bool
@@ -34,16 +86,89 @@ class Locale
         return is_string($locale) && in_array($locale, static::supported(), true);
     }
 
+    /**
+     * Metadata for a language. Never returns null and never returns a partial
+     * array: an unknown, malformed or missing locale falls back to the default
+     * language, and any key missing from config is filled from self::LOCALES.
+     *
+     * @return array<string,string>
+     */
     public static function meta(?string $locale = null): array
     {
-        $locale ??= app()->getLocale();
+        $locale = static::normalise($locale);
+        $base = self::LOCALES[$locale] ?? static::genericMeta($locale);
 
-        return config('creativemark.locales.'.$locale, config('creativemark.locales.'.static::default()));
+        $configured = config('creativemark.locales.'.$locale);
+
+        if (is_array($configured)) {
+            $base = array_merge($base, array_filter(
+                $configured,
+                fn ($value) => is_scalar($value) && $value !== '',
+            ));
+        }
+
+        // Guarantee the full contract even if config overrode it with rubbish.
+        foreach (static::genericMeta($locale) as $key => $value) {
+            if (! isset($base[$key]) || ! is_string($base[$key]) || $base[$key] === '') {
+                $base[$key] = $value;
+            }
+        }
+
+        return $base;
+    }
+
+    /** Metadata for every supported language, keyed by code. */
+    public static function all(): array
+    {
+        $locales = [];
+
+        foreach (static::supported() as $code) {
+            $locales[$code] = static::meta($code);
+        }
+
+        return $locales;
+    }
+
+    /**
+     * Turn anything into a usable locale code: `en-GB`/`en_US` become `en`, and
+     * an unsupported or empty value becomes the default language.
+     */
+    public static function normalise(?string $locale = null): string
+    {
+        $locale = $locale ?? app()->getLocale();
+
+        if (! is_string($locale) || $locale === '') {
+            return static::default();
+        }
+
+        if (static::isSupported($locale)) {
+            return $locale;
+        }
+
+        $short = strtolower(str_replace('_', '-', $locale));
+        $short = explode('-', $short)[0];
+
+        return static::isSupported($short) ? $short : static::default();
+    }
+
+    /** Safe defaults for a locale with no canonical entry (e.g. a future language). */
+    protected static function genericMeta(string $locale): array
+    {
+        return [
+            'code' => $locale,
+            'name' => strtoupper($locale),
+            'native' => strtoupper($locale),
+            'dir' => in_array($locale, ['ar', 'he', 'fa', 'ur'], true) ? 'rtl' : 'ltr',
+            'flag' => '🌐',
+            'html' => $locale,
+            'iso' => $locale,
+            'hreflang' => $locale,
+        ];
     }
 
     public static function direction(?string $locale = null): string
     {
-        return static::meta($locale)['dir'] ?? 'rtl';
+        return static::meta($locale)['dir'];
     }
 
     public static function isRtl(?string $locale = null): bool
@@ -54,9 +179,9 @@ class Locale
     /** The other locale — used by the language switcher. */
     public static function alternate(?string $locale = null): string
     {
-        $locale ??= app()->getLocale();
+        $locale = static::normalise($locale);
 
-        return collect(static::supported())->first(fn ($l) => $l !== $locale) ?? static::default();
+        return collect(static::supported())->first(fn ($code) => $code !== $locale) ?? static::default();
     }
 
     /**
@@ -64,6 +189,12 @@ class Locale
      * Accept-Language → default.
      */
     public static function resolve(Request $request): string
+    {
+        return static::normalise(static::detect($request));
+    }
+
+    /** @see resolve() — this does the detection, resolve() guarantees the value. */
+    protected static function detect(Request $request): ?string
     {
         /*
          | The URL is authoritative. A localized route decides the language by
@@ -135,8 +266,16 @@ class Locale
     /** Route name for a locale: `landing` in Arabic, `en.landing` in English. */
     public static function routeName(string $name, ?string $locale = null): string
     {
-        $locale ??= app()->getLocale();
-        $base = Str::startsWith($name, 'en.') ? Str::after($name, 'en.') : $name;
+        $locale = static::normalise($locale);
+        $base = $name;
+
+        foreach (static::supported() as $code) {
+            if ($code !== static::default() && Str::startsWith($name, $code.'.')) {
+                $base = Str::after($name, $code.'.');
+
+                break;
+            }
+        }
 
         return $locale === static::default() ? $base : $locale.'.'.$base;
     }
@@ -144,7 +283,7 @@ class Locale
     /** Same page, other language — falls back to that language's home page. */
     public static function alternateUrl(?string $locale = null): string
     {
-        $locale ??= static::alternate();
+        $locale = static::normalise($locale ?? static::alternate());
         $route = request()->route();
 
         if (! $route || ! $route->getName()) {

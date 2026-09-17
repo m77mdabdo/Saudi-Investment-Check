@@ -2,7 +2,7 @@
     use App\Support\Locale;
 
     $current = app()->getLocale();
-    $locales = config('creativemark.locales', []);
+    $locales = Locale::all();
 @endphp
 
 <nav class="flex flex-none items-center gap-0.5 rounded-full border border-white/12 bg-white/5 p-0.5 text-xs font-bold backdrop-blur"

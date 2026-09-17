@@ -11,6 +11,28 @@ use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 
 abstract class TestCase extends BaseTestCase
 {
+    /**
+     * Refuse to run against anything but the throwaway test database.
+     *
+     * A leftover `bootstrap/cache/config.php` overrides phpunit.xml's env
+     * values, so the suite can silently point at the real MySQL database and
+     * RefreshDatabase will then wipe it. Fail loudly instead.
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $connection = config('database.default');
+        $database = config('database.connections.'.$connection.'.database');
+
+        if ($connection !== 'sqlite' || ! in_array($database, [':memory:', ''], true)) {
+            $this->fail(
+                'The test suite is pointed at "'.$connection.'" ('.$database.') instead of sqlite :memory:. '
+                .'A cached config is almost certainly the cause — run `php artisan config:clear` before testing.'
+            );
+        }
+    }
+
     /** Seeds the quiz definition, result rules and platform defaults. */
     protected function seedPlatform(): void
     {

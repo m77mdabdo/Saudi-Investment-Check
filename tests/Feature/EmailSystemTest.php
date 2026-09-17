@@ -278,6 +278,35 @@ class EmailSystemTest extends TestCase
         Mail::assertNotSent(LeadStatusMail::class);
     }
 
+    public function test_the_smtp_scheme_is_explicit_and_not_left_to_mail_encryption(): void
+    {
+        // Laravel 12 selects the transport from `scheme`; MAIL_ENCRYPTION alone
+        // is ignored, which is what silently broke delivery in production.
+        $config = require base_path('config/mail.php');
+
+        $this->assertArrayHasKey('scheme', $config['mailers']['smtp']);
+        $this->assertContains($config['mailers']['smtp']['scheme'], ['smtp', 'smtps']);
+        $this->assertIsFloat($config['mailers']['smtp']['timeout']);
+        $this->assertGreaterThan(0, $config['mailers']['smtp']['timeout']);
+    }
+
+    public function test_the_diagnostic_flags_a_scaffolding_mail_configuration(): void
+    {
+        config([
+            'mail.default' => 'smtp',
+            'mail.mailers.smtp.host' => '127.0.0.1',
+            'mail.mailers.smtp.port' => 2525,
+            'mail.mailers.smtp.username' => null,
+            'mail.mailers.smtp.password' => null,
+        ]);
+
+        $problems = implode(' | ', app(MailHealth::class)->report()['problems']);
+
+        $this->assertStringContainsString('not a real SMTP server', $problems);
+        $this->assertStringContainsString('2525', $problems);
+        $this->assertStringContainsString('username or password is missing', $problems);
+    }
+
     public function test_statuses_can_be_flagged_as_client_facing(): void
     {
         $this->actingAs($this->admin());
