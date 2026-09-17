@@ -28,7 +28,9 @@ class MailHealth
             'MAIL_MAILER' => $mailer,
             'host' => $host,
             'port' => (string) $port,
-            'encryption' => (string) (config('mail.mailers.smtp.scheme') ?: config('mail.mailers.smtp.encryption') ?: 'auto'),
+            'scheme (effective)' => (string) (config('mail.mailers.smtp.scheme') ?: 'auto'),
+            'encryption (legacy)' => (string) (config('mail.mailers.smtp.encryption') ?: '—'),
+            'timeout' => (string) config('mail.mailers.smtp.timeout').'s',
             'username configured' => filled(config('mail.mailers.smtp.username')) ? 'yes' : 'no',
             'password configured' => filled(config('mail.mailers.smtp.password')) ? 'yes' : 'no',
             'from address' => (string) config('mail.from.address'),
@@ -50,8 +52,18 @@ class MailHealth
                 $problems[] = 'SMTP username or password is missing from the environment.';
             }
 
-            if (blank($host) || $host === '127.0.0.1') {
-                $problems[] = 'MAIL_HOST is not a real SMTP server ('.($host ?: 'empty').').';
+            if (blank($host) || $host === '127.0.0.1' || $host === 'localhost') {
+                $problems[] = 'MAIL_HOST is not a real SMTP server ('.($host ?: 'empty').'). Production still looks like the scaffolding default.';
+            }
+
+            $scheme = (string) config('mail.mailers.smtp.scheme');
+
+            if ($scheme !== '' && ! in_array($scheme, ['smtp', 'smtps'], true)) {
+                $problems[] = 'MAIL_SCHEME must be "smtp" or "smtps" (got "'.$scheme.'"). Use smtp for port 587, smtps for 465.';
+            }
+
+            if ((int) $port === 2525) {
+                $problems[] = 'MAIL_PORT 2525 is the scaffolding placeholder — the real SMTP settings have not been applied.';
             }
         }
 

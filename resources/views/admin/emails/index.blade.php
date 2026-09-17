@@ -54,7 +54,7 @@
             <div>
                 <label class="ad-label" for="test-locale">{{ __('common.language') }}</label>
                 <select id="test-locale" name="locale" class="ad-select w-auto">
-                    @foreach (config('creativemark.locales') as $code => $meta)
+                    @foreach (\App\Support\Locale::all() as $code => $meta)
                         <option value="{{ $code }}">{{ $meta['native'] }}</option>
                     @endforeach
                 </select>

@@ -44,7 +44,7 @@ class LandingPage extends Model
     {
         $locale ??= app()->getLocale();
 
-        if ($locale === config('creativemark.base_locale', 'ar')) {
+        if ($locale === \App\Support\Locale::default()) {
             return (array) ($this->content ?? []);
         }
 
@@ -68,7 +68,7 @@ class LandingPage extends Model
     {
         $locale ??= app()->getLocale();
 
-        if ($locale === config('creativemark.base_locale', 'ar')) {
+        if ($locale === \App\Support\Locale::default()) {
             return $this->{$field} ?: null;
         }
 

@@ -39,17 +39,27 @@ return [
 
         'smtp' => [
             'transport' => 'smtp',
-            // Laravel 12 dropped 'encryption' from the published config, which
-            // silently ignored MAIL_ENCRYPTION. Both keys are honoured here:
-            // MAIL_SCHEME (smtp|smtps) wins, otherwise MAIL_ENCRYPTION (tls|ssl).
-            'scheme' => env('MAIL_SCHEME', env('MAIL_ENCRYPTION') === 'ssl' ? 'smtps' : null),
+
+            /*
+             | Laravel 12 picks the SMTP transport from `scheme`; MAIL_ENCRYPTION
+             | on its own is ignored, which is why a "tls" setting silently did
+             | nothing. The scheme is therefore always explicit here:
+             |
+             |   MAIL_SCHEME set      → used as-is (smtp | smtps)
+             |   MAIL_PORT 465        → smtps (implicit TLS)
+             |   anything else (587)  → smtp  (STARTTLS negotiated on connect)
+             |
+             | MAIL_ENCRYPTION is still read so nothing that expects it breaks,
+             | but it is no longer what decides the connection.
+             */
+            'scheme' => env('MAIL_SCHEME') ?: ((int) env('MAIL_PORT', 587) === 465 ? 'smtps' : 'smtp'),
             'encryption' => env('MAIL_ENCRYPTION', 'tls'),
             'url' => env('MAIL_URL'),
             'host' => env('MAIL_HOST', '127.0.0.1'),
             'port' => env('MAIL_PORT', 2525),
             'username' => env('MAIL_USERNAME'),
             'password' => env('MAIL_PASSWORD'),
-            'timeout' => (int) env('MAIL_TIMEOUT', 30),
+            'timeout' => (float) env('MAIL_TIMEOUT', 30),
             'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
         ],
 

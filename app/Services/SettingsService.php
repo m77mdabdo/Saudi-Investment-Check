@@ -62,7 +62,7 @@ class SettingsService
     {
         $locale = app()->getLocale();
 
-        if ($locale !== config('creativemark.base_locale', 'ar')) {
+        if ($locale !== \App\Support\Locale::default()) {
             $translated = $this->get($key.'_'.$locale);
 
             if (filled($translated)) {
