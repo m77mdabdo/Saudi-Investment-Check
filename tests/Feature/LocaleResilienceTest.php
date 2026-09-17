@@ -161,11 +161,14 @@ class LocaleResilienceTest extends TestCase
 
         $this->simulateStaleConfigCache();
 
-        $mail = new \App\Mail\LeadResultMail($lead, null, null, null, null, 'en');
-        $this->assertStringContainsString('dir="ltr"', $mail->render());
+        $this->assertStringContainsString('dir="ltr"', $this->renderMail(
+            new \App\Mail\LeadResultMail($lead, null, null, null, null, 'en')
+        ));
 
-        $mail = new \App\Mail\LeadResultMail($lead, null, null, null, null, 'invalid');
-        $this->assertStringContainsString('dir=', $mail->render());
+        // An unknown language must still render, in the fallback direction.
+        $this->assertStringContainsString('dir="rtl"', $this->renderMail(
+            new \App\Mail\LeadResultMail($lead, null, null, null, null, 'invalid')
+        ));
     }
 
     public function test_route_names_resolve_for_any_locale_input(): void
