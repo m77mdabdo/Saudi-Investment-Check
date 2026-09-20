@@ -269,6 +269,19 @@ Alpine.start()
     var SMALL_VIEWPORT = 640
     var WASH_START = 0.45
     var WASH_END = 0.85
+
+    /*
+     | The headline's white->dark flip is a switch, not a ramp.
+     |
+     | Interpolating the text from white to dark while the background goes from
+     | dark to white walks both through mid-tone at the same time, and contrast
+     | collapses in the middle (measured: 1.6:1). Flipping at a single point --
+     | with the scrim leaving at the same instant, while the artwork is still
+     | visible -- keeps every scroll position on one side or the other:
+     | white on the dark scrim before, dark on the brightening wash after.
+     | CSS transitions the two over 140ms so it still reads as a tonal shift.
+     */
+    var TINT_SNAP = 0.66
     var ORIGIN_X = 51 // measured: centre of the doorway aperture
     var ORIGIN_Y = 39 // measured: the glow inside it
 
@@ -313,7 +326,7 @@ Alpine.start()
 
         stage.style.setProperty('--scale', scale.toFixed(4))
         stage.style.setProperty('--wash', range(progress, WASH_START, WASH_END).toFixed(4))
-        stage.style.setProperty('--tint', range(progress, WASH_START + 0.08, WASH_END).toFixed(4))
+        stage.style.setProperty('--tint', progress >= TINT_SNAP ? '1' : '0')
         stage.style.setProperty('--title-scale', (1 + progress * 0.12).toFixed(4))
     }
 

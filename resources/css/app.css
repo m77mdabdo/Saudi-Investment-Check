@@ -379,6 +379,33 @@
         pointer-events: none;
     }
 
+    /* Soft scrim that lifts the line off the doorway glow, which is the
+       brightest part of the frame. It is sized to the text block, falls off to
+       fully transparent well inside the section edges (so it never reads as a
+       shape), and fades out as --tint rises — by the time the wash turns the
+       background white and the text goes dark, it is gone. */
+    .portal__title::before {
+        content: '';
+        position: absolute;
+        z-index: -1;
+        inset: -1.7em -2.8em;
+        pointer-events: none;
+        opacity: calc(1 - var(--tint, 0));
+        transition: opacity 140ms linear;
+        /* The radii are 50% of the box, so the last stop lands exactly on the
+           box edge at zero alpha. Anything larger gets clipped by the element
+           box while still partly opaque, which is what draws a hard rectangle. */
+        background: radial-gradient(
+            ellipse 50% 50% at 50% 50%,
+            rgba(12, 8, 4, 0.76) 0%,
+            rgba(12, 8, 4, 0.68) 34%,
+            rgba(12, 8, 4, 0.42) 58%,
+            rgba(12, 8, 4, 0.16) 78%,
+            rgba(12, 8, 4, 0.04) 92%,
+            rgba(12, 8, 4, 0) 100%
+        );
+    }
+
     .portal__title {
         position: relative;
         z-index: 2;
@@ -394,6 +421,9 @@
         transform: scale(var(--title-scale, 1));
         color: color-mix(in oklab, #fff calc((1 - var(--tint, 0)) * 100%), #2b2823);
         text-shadow: 0 2px 40px rgba(0, 0, 0, calc(0.45 * (1 - var(--tint, 0))));
+        /* The colour and the scrim change together, fast enough to read as a
+           shift and short enough that no scroll position rests mid-way. */
+        transition: color 140ms linear, text-shadow 140ms linear;
     }
 
     /* Phones: a shorter runway, and the JS caps the zoom at 3x to keep the
