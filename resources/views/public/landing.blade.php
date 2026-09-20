@@ -75,7 +75,7 @@
     <section class="portal" id="portal">
         <div class="portal__stage">
             <div class="portal__media">
-                <img src="{{ $portal['url'] }}" alt="" fetchpriority="high" decoding="async">
+                <img src="{{ $portal['url'] }}" alt="" loading="lazy" decoding="async">
             </div>
             <div class="portal__wash" aria-hidden="true"></div>
             <p class="portal__title">{{ $c('portal_line', __('home.portal_line')) }}</p>
