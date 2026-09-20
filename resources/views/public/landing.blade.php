@@ -28,12 +28,24 @@
     <section class="portal" id="portal">
         <div class="portal__stage">
             <div class="portal__media">
-                {{-- The path is configured (config/creativemark.php ▸ media.fallbacks.portal)
-                     but emitted root-relative rather than through asset(): asset() builds
-                     URLs from APP_URL, which points at production, so a local page would
-                     ask the live domain for a file that isn't deployed there. A leading
-                     slash resolves against whatever host is actually serving the page. --}}
-                <img src="/{{ ltrim(config('creativemark.media.fallbacks.portal'), '/') }}"
+                @php
+                    // The path is configured (config/creativemark.php ▸ media.fallbacks.portal)
+                    // but emitted root-relative rather than through asset(): asset() builds
+                    // URLs from APP_URL, which points at production, so a local page would
+                    // ask the live domain for a file that isn't deployed there. A leading
+                    // slash resolves against whatever host is actually serving the page —
+                    // including Hostinger, where the root .htaccess rewrites into public/.
+                    //
+                    // The literal default is a safety net, not a second source of truth: a
+                    // server running a config cache built before this key existed gets null
+                    // back, and "/{$null}" is "/", which makes the browser fetch the page
+                    // itself as an image and draw a broken-image icon. Never emit a bare "/".
+                    $portalImage = ltrim(
+                        config('creativemark.media.fallbacks.portal') ?: 'images/fallback/home1.webp',
+                        '/'
+                    );
+                @endphp
+                <img src="/{{ $portalImage }}"
                      alt="" fetchpriority="high" decoding="async">
             </div>
             <div class="portal__wash" aria-hidden="true"></div>
