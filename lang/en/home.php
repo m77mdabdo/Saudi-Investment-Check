@@ -8,6 +8,7 @@ return [
     'hero_description' => "Answer a few quick questions and in under a minute you will know:\nReady to start?\nA little preparation needed?\nOr time to revisit the plan first?",
     'hero_meta' => 'Only :count questions • under 60 seconds',
     'cta_label' => 'Start the check',
+    'portal_line' => 'One step stands between you and the Saudi market',
     'how_title' => 'How it works',
     'step_one_title' => 'Answer :count questions',
     'step_one_text' => 'All tap-to-select — no typing.',

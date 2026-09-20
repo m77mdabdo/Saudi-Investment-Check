@@ -243,3 +243,93 @@ Alpine.data('phoneField', (config) => ({
 
 window.Alpine = Alpine
 Alpine.start()
+
+/**
+ * Scroll-driven portal transition.
+ *
+ * The stage is sticky; as the section scrolls past, the artwork scales toward
+ * the doorway and a white wash hands over to the section below. Everything is
+ * written as custom properties, so CSS owns the presentation and this file only
+ * reports progress. No dependencies, no scroll hijacking — the page scrolls
+ * natively and the effect is purely decorative.
+ */
+;(function () {
+    var section = document.getElementById('portal')
+    if (!section) return
+
+    var stage = section.querySelector('.portal__stage')
+    if (!stage) return
+
+    var reduced = window.matchMedia('(prefers-reduced-motion: reduce)')
+
+    // 1671px-wide source: 4.5x is the most it can take before the zoom turns
+    // mushy, and the wash starts early enough to cover the softest frames.
+    var MAX_SCALE = 4.5
+    var MAX_SCALE_SMALL = 3 // smaller composited layer for mobile GPUs
+    var SMALL_VIEWPORT = 640
+    var WASH_START = 0.45
+    var WASH_END = 0.85
+    var ORIGIN_X = 51 // measured: centre of the doorway aperture
+    var ORIGIN_Y = 39 // measured: the glow inside it
+
+    stage.style.setProperty('--origin-x', ORIGIN_X + '%')
+    stage.style.setProperty('--origin-y', ORIGIN_Y + '%')
+
+    var ticking = false
+
+    function clamp(v, a, b) {
+        return v < a ? a : v > b ? b : v
+    }
+
+    function range(v, a, b) {
+        return clamp((v - a) / (b - a), 0, 1)
+    }
+
+    function maxScale() {
+        return window.innerWidth < SMALL_VIEWPORT ? MAX_SCALE_SMALL : MAX_SCALE
+    }
+
+    function reset() {
+        stage.style.setProperty('--scale', '1')
+        stage.style.setProperty('--wash', '0')
+        stage.style.setProperty('--tint', '0')
+        stage.style.setProperty('--title-scale', '1')
+    }
+
+    function update() {
+        ticking = false
+
+        if (reduced.matches) {
+            reset()
+            return
+        }
+
+        var rect = section.getBoundingClientRect()
+        var travel = section.offsetHeight - window.innerHeight
+        if (travel <= 0) return
+
+        var progress = clamp(-rect.top / travel, 0, 1)
+        var scale = Math.exp(progress * Math.log(maxScale()))
+
+        stage.style.setProperty('--scale', scale.toFixed(4))
+        stage.style.setProperty('--wash', range(progress, WASH_START, WASH_END).toFixed(4))
+        stage.style.setProperty('--tint', range(progress, WASH_START + 0.08, WASH_END).toFixed(4))
+        stage.style.setProperty('--title-scale', (1 + progress * 0.12).toFixed(4))
+    }
+
+    function onScroll() {
+        if (!ticking) {
+            ticking = true
+            requestAnimationFrame(update)
+        }
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll, { passive: true })
+
+    if (typeof reduced.addEventListener === 'function') {
+        reduced.addEventListener('change', update)
+    }
+
+    update()
+})()

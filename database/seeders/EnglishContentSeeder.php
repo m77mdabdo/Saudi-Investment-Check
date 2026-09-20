@@ -213,6 +213,7 @@ class EnglishContentSeeder extends Seeder
                 'hero_description' => "Answer a few quick questions and in under a minute you will know:\nReady to start?\nA little preparation needed?\nOr time to revisit the plan first?",
                 'hero_meta' => '8 questions only • under 60 seconds',
                 'cta_label' => 'Start the check',
+                'portal_line' => 'One step stands between you and the Saudi market',
                 'quiz_intro' => 'Pick the answer closest to your company — there is no wrong answer.',
                 'lead_headline' => 'Great — we have a good idea of where you stand 👀',
                 'lead_text' => 'Leave your details and we will show your Saudi-Ready Check result.',

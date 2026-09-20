@@ -37,6 +37,7 @@ class LandingController extends Controller
             'content' => $page?->localizedContent() ?? [],
             'event' => $event,
             'hero' => $this->media->slot('hero'),
+            'portal' => $this->media->slot('portal'),
             'eventImage' => $this->media->slot('event'),
             'cta' => $this->settings->ctaLinks(),
             'questionCount' => $questionCount,

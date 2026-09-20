@@ -56,7 +56,9 @@
         font-family: var(--font-sans);
         font-size: clamp(0.95rem, 0.92rem + 0.15vw, 1.05rem);
         -webkit-font-smoothing: antialiased;
-        overflow-x: hidden;
+        /* `clip` (not `hidden`): hidden turns body into a scroll container,
+           which silently breaks `position: sticky` for the portal stage. */
+        overflow-x: clip;
         /* Respect notches and home indicators on every phone. */
         padding-top: env(safe-area-inset-top, 0px);
         padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -331,6 +333,81 @@
     }
 }
 
+    /* ── Scroll-driven portal transition ───────────────────────────────────
+       A tall section whose stage sticks to the viewport while the artwork
+       scales toward the doorway; a white wash then hands the page over to the
+       section below. All animated values are custom properties written by JS,
+       so CSS stays declarative and there is a static fallback without JS. */
+    .portal {
+        height: 340vh;
+        position: relative;
+    }
+
+    .portal__stage {
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        height: 100svh;
+        overflow: hidden;
+        display: grid;
+        place-items: center;
+        background-color: var(--color-ink-950);
+    }
+
+    .portal__media {
+        position: absolute;
+        inset: 0;
+        transform: scale(var(--scale, 1));
+        /* Percentages here are physical, not logical: the origin lands on the
+           doorway in both LTR and RTL. Do not swap it for a logical value. */
+        transform-origin: var(--origin-x, 51%) var(--origin-y, 39%);
+        will-change: transform;
+    }
+
+    .portal__media img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .portal__wash {
+        position: absolute;
+        inset: 0;
+        background: #fff;
+        opacity: var(--wash, 0);
+        pointer-events: none;
+    }
+
+    .portal__title {
+        position: relative;
+        z-index: 2;
+        margin: 0;
+        padding: 0 6vw;
+        max-width: 22ch;
+        text-align: center;
+        text-wrap: balance;
+        font-size: clamp(1.75rem, 1.1rem + 3.1vw, 3.1rem);
+        font-weight: 800;
+        line-height: 1.2;
+        letter-spacing: -0.01em;
+        transform: scale(var(--title-scale, 1));
+        color: color-mix(in oklab, #fff calc((1 - var(--tint, 0)) * 100%), #2b2823);
+        text-shadow: 0 2px 40px rgba(0, 0, 0, calc(0.45 * (1 - var(--tint, 0))));
+    }
+
+    /* Phones: a shorter runway, and the JS caps the zoom at 3x to keep the
+       composited layer small enough for mobile GPUs. */
+    @media (max-width: 639px) {
+        .portal {
+            height: 240vh;
+        }
+
+        .portal__title {
+            padding: 0 8vw;
+        }
+    }
+
 @layer utilities {
     .cm-step-enter {
         animation: cm-step-in 0.36s cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -381,6 +458,19 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+    .portal {
+        height: auto;
+        min-height: 100svh;
+    }
+
+    .portal__media {
+        transform: none !important;
+    }
+
+    .portal__wash {
+        opacity: 0 !important;
+    }
+
     *,
     *::before,
     *::after {

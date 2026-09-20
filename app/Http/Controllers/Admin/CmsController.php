@@ -39,6 +39,7 @@ class CmsController extends Controller
             'content.hero_description' => ['nullable', 'string', 'max:800'],
             'content.hero_meta' => ['nullable', 'string', 'max:120'],
             'content.cta_label' => ['nullable', 'string', 'max:80'],
+            'content.portal_line' => ['nullable', 'string', 'max:120'],
             'content.quiz_intro' => ['nullable', 'string', 'max:200'],
             'content.lead_headline' => ['nullable', 'string', 'max:200'],
             'content.lead_text' => ['nullable', 'string', 'max:300'],
