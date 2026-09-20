@@ -75,7 +75,11 @@
     <section class="portal" id="portal">
         <div class="portal__stage">
             <div class="portal__media">
-                <img src="{{ $portal['url'] }}" alt="" loading="lazy" decoding="async">
+                {{-- Hardcoded on purpose for now: asset()/MediaService resolve against
+                     APP_URL, which points at production, so the local page asked the
+                     live domain for a file that isn't deployed there. Root-relative
+                     works on any host. Move back into MediaService later. --}}
+                <img src="/images/fallback/home.png" alt="" loading="lazy" decoding="async">
             </div>
             <div class="portal__wash" aria-hidden="true"></div>
             <p class="portal__title">{{ $c('portal_line', __('home.portal_line')) }}</p>
