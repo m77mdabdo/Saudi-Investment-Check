@@ -338,8 +338,16 @@
        scales toward the doorway; a white wash then hands the page over to the
        section below. All animated values are custom properties written by JS,
        so CSS stays declarative and there is a static fallback without JS. */
+    /* The negative bottom margin pulls the hero up so it sits directly BEHIND
+       the pinned stage, already in its final position. That is what removes the
+       dead stretch: without it the stage is an opaque white curtain that has to
+       be scrolled off — a whole extra screen of white — before the hero shows.
+       With it, the stage simply dissolves and the hero is already there.
+       The margin must match the stage height exactly, or the hero lands off by
+       the difference. Reset it in the reduced-motion block. */
     .portal {
-        height: 200vh;
+        height: 150vh;
+        margin-bottom: -100svh;
         position: relative;
     }
 
@@ -352,6 +360,15 @@
         display: grid;
         place-items: center;
         background-color: var(--color-ink-950);
+        /* Paints over the hero, which now overlaps it: the hero is later in the
+           DOM and would otherwise win. */
+        z-index: 5;
+        /* Required, not cosmetic — the stage's box overlaps the hero even once
+           it is invisible, so without this it would swallow every click and
+           selection in the hero below. Nothing inside the stage is interactive. */
+        pointer-events: none;
+        /* The handoff: white dissolves to reveal the hero already in place. */
+        opacity: calc(1 - var(--reveal, 0));
     }
 
     .portal__media {
@@ -497,7 +514,7 @@
        composited layer small enough for mobile GPUs. */
     @media (max-width: 639px) {
         .portal {
-            height: 160vh;
+            height: 140vh;
         }
 
         .portal__title {
@@ -581,6 +598,13 @@
     .portal {
         height: auto;
         min-height: 100svh;
+        /* Undo the overlap: with no transition there is nothing to dissolve, so
+           the hero must go back to sitting after the portal, not behind it. */
+        margin-bottom: 0;
+    }
+
+    .portal__stage {
+        opacity: 1 !important;
     }
 
     .portal__media {

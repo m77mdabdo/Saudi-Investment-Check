@@ -268,12 +268,20 @@ Alpine.start()
     var MAX_SCALE_SMALL = 3 // smaller composited layer for mobile GPUs
     var SMALL_VIEWPORT = 640
     var WASH_START = 0.45
-    var WASH_END = 1
+    // Full white lands exactly where the handoff begins, so the screen is never
+    // white for longer than it takes the hero to appear through it.
+    var WASH_END = 0.75
 
     // The line (and its scrim) dissolve with the artwork as the wash rises,
     // clearing just before the screen reaches full white.
-    var FADE_START = 0.6
-    var FADE_END = 0.88
+    var FADE_START = 0.45
+    var FADE_END = 0.7
+
+    // The handoff. The hero is already parked behind the stage (see the
+    // negative margin on .portal), so the last quarter of the scroll dissolves
+    // the stage instead of scrolling it away.
+    var REVEAL_START = 0.75
+    var REVEAL_END = 1
     var ORIGIN_X = 51 // measured: centre of the doorway aperture
     var ORIGIN_Y = 39 // measured: the glow inside it
 
@@ -298,6 +306,7 @@ Alpine.start()
         stage.style.setProperty('--scale', '1')
         stage.style.setProperty('--wash', '0')
         stage.style.setProperty('--fade', '0')
+        stage.style.setProperty('--reveal', '0')
         stage.style.setProperty('--title-scale', '1')
     }
 
@@ -319,6 +328,7 @@ Alpine.start()
         stage.style.setProperty('--scale', scale.toFixed(4))
         stage.style.setProperty('--wash', range(progress, WASH_START, WASH_END).toFixed(4))
         stage.style.setProperty('--fade', range(progress, FADE_START, FADE_END).toFixed(4))
+        stage.style.setProperty('--reveal', range(progress, REVEAL_START, REVEAL_END).toFixed(4))
         stage.style.setProperty('--title-scale', (1 + progress * 0.12).toFixed(4))
     }
 
