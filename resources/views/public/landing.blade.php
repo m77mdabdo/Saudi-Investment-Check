@@ -20,6 +20,25 @@
 @endphp
 
 <x-layouts.public :seo-title="$seoTitle" :seo-description="$seoDescription" :footer-note="$footerNote" :og-image="$hero['url']">
+    {{-- ───────────────── Portal transition ─────────────────
+         The page opens here: the artwork zooms into the doorway and washes to
+         white, revealing the hero underneath. The image is decorative (alt=""), the wash is aria-hidden, and
+         the single line of copy stays a normal, readable paragraph — the page's
+         only <h1> belongs to the hero, which this reveals. --}}
+    <section class="portal" id="portal">
+        <div class="portal__stage">
+            <div class="portal__media">
+                {{-- Hardcoded on purpose for now: asset()/MediaService resolve against
+                     APP_URL, which points at production, so the local page asked the
+                     live domain for a file that isn't deployed there. Root-relative
+                     works on any host. Move back into MediaService later. --}}
+                <img src="/images/fallback/home.png" alt="" fetchpriority="high" decoding="async">
+            </div>
+            <div class="portal__wash" aria-hidden="true"></div>
+            <p class="portal__title">{{ $c('portal_line', __('home.portal_line')) }}</p>
+        </div>
+    </section>
+
     {{-- ───────────────── Hero ───────────────── --}}
     <section class="relative mx-auto w-full max-w-5xl px-4 pb-6 pt-6 sm:px-5 sm:pt-12">
         <div class="relative overflow-hidden rounded-3xl border border-white/10 sm:rounded-[2rem]">
@@ -64,25 +83,6 @@
                     </p>
                 </div>
             </div>
-        </div>
-    </section>
-
-    {{-- ───────────────── Portal transition ─────────────────
-         Decorative scroll-driven zoom between the hero and the rest of the
-         page. The image is decorative (alt=""), the wash is aria-hidden, and
-         the single line of copy stays a normal, readable paragraph — the page
-         keeps its one <h1> in the hero above. --}}
-    <section class="portal" id="portal">
-        <div class="portal__stage">
-            <div class="portal__media">
-                {{-- Hardcoded on purpose for now: asset()/MediaService resolve against
-                     APP_URL, which points at production, so the local page asked the
-                     live domain for a file that isn't deployed there. Root-relative
-                     works on any host. Move back into MediaService later. --}}
-                <img src="/images/fallback/home.png" alt="" loading="lazy" decoding="async">
-            </div>
-            <div class="portal__wash" aria-hidden="true"></div>
-            <p class="portal__title">{{ $c('portal_line', __('home.portal_line')) }}</p>
         </div>
     </section>
 
