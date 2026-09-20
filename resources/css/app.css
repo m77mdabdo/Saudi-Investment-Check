@@ -339,7 +339,7 @@
        section below. All animated values are custom properties written by JS,
        so CSS stays declarative and there is a static fallback without JS. */
     .portal {
-        height: 340vh;
+        height: 200vh;
         position: relative;
     }
 
@@ -382,16 +382,14 @@
     /* Soft scrim that lifts the line off the doorway glow, which is the
        brightest part of the frame. It is sized to the text block, falls off to
        fully transparent well inside the section edges (so it never reads as a
-       shape), and fades out as --tint rises — by the time the wash turns the
-       background white and the text goes dark, it is gone. */
+       shape), and leaves on the same curve as the line it sits behind. */
     .portal__title::before {
         content: '';
         position: absolute;
         z-index: -1;
         inset: -1.7em -2.8em;
         pointer-events: none;
-        opacity: calc(1 - var(--tint, 0));
-        transition: opacity 140ms linear;
+        opacity: calc(1 - var(--fade, 0));
         /* The radii are 50% of the box, so the last stop lands exactly on the
            box edge at zero alpha. Anything larger gets clipped by the element
            box while still partly opaque, which is what draws a hard rectangle. */
@@ -419,18 +417,18 @@
         line-height: 1.2;
         letter-spacing: -0.01em;
         transform: scale(var(--title-scale, 1));
-        color: color-mix(in oklab, #fff calc((1 - var(--tint, 0)) * 100%), #2b2823);
-        text-shadow: 0 2px 40px rgba(0, 0, 0, calc(0.45 * (1 - var(--tint, 0))));
-        /* The colour and the scrim change together, fast enough to read as a
-           shift and short enough that no scroll position rests mid-way. */
-        transition: color 140ms linear, text-shadow 140ms linear;
+        /* The line belongs to the artwork: it stays white and dissolves with
+           it as the wash rises, rather than surviving onto a blank screen. */
+        color: #fff;
+        text-shadow: 0 2px 40px rgba(0, 0, 0, 0.45);
+        opacity: calc(1 - var(--fade, 0));
     }
 
     /* Phones: a shorter runway, and the JS caps the zoom at 3x to keep the
        composited layer small enough for mobile GPUs. */
     @media (max-width: 639px) {
         .portal {
-            height: 240vh;
+            height: 160vh;
         }
 
         .portal__title {
