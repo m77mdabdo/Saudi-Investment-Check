@@ -28,14 +28,20 @@
     <section class="portal" id="portal">
         <div class="portal__stage">
             <div class="portal__media">
-                {{-- Hardcoded on purpose for now: asset()/MediaService resolve against
-                     APP_URL, which points at production, so the local page asked the
-                     live domain for a file that isn't deployed there. Root-relative
-                     works on any host. Move back into MediaService later. --}}
-                <img src="/images/fallback/home.png" alt="" fetchpriority="high" decoding="async">
+                {{-- The path is configured (config/creativemark.php ▸ media.fallbacks.portal)
+                     but emitted root-relative rather than through asset(): asset() builds
+                     URLs from APP_URL, which points at production, so a local page would
+                     ask the live domain for a file that isn't deployed there. A leading
+                     slash resolves against whatever host is actually serving the page. --}}
+                <img src="/{{ ltrim(config('creativemark.media.fallbacks.portal'), '/') }}"
+                     alt="" fetchpriority="high" decoding="async">
             </div>
             <div class="portal__wash" aria-hidden="true"></div>
             <p class="portal__title">{{ $c('portal_line', __('home.portal_line')) }}</p>
+            {{-- Deliberately untranslated: "Scroll" stays English in both locales.
+                 lang="en" so a screen reader in the Arabic page pronounces it as
+                 English rather than sounding it out in Arabic. --}}
+            <p class="portal__scroll" lang="en" dir="ltr"><span>Scroll</span></p>
         </div>
     </section>
 

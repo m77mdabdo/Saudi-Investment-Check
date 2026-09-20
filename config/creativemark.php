@@ -70,7 +70,7 @@ return [
             'hero' => 'images/fallback/hero.svg',
             // Purpose-built artwork for the scroll-driven portal transition:
             // the zoom targets the doorway, so this one is not interchangeable.
-            'portal' => 'images/fallback/home.webp',
+            'portal' => 'images/fallback/home1.webp',
             'result' => 'images/fallback/result.svg',
             'auth' => 'images/fallback/auth.svg',
             'event' => 'images/fallback/event.svg',

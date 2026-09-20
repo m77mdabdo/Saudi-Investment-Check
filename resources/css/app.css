@@ -424,6 +424,75 @@
         opacity: calc(1 - var(--fade, 0));
     }
 
+    /* Quiet scroll affordance parked at the foot of the stage. It is a hint,
+       not a headline: small, light, widely tracked, and it leaves on the same
+       --fade curve as the line so nothing survives onto the white. The word is
+       English in both locales by design, hence the forced dir/lang in markup;
+       left/right insets rather than logical ones keep it centred either way. */
+    .portal__scroll {
+        position: absolute;
+        z-index: 2;
+        left: 0;
+        right: 0;
+        /* Generous, because the page header (52-60px, in normal flow) pushes
+           the sticky stage that far past the fold until it pins on first
+           scroll. A tighter offset hides the chevron at the exact moment the
+           hint matters most. */
+        bottom: clamp(5.5rem, 11vh, 8rem);
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        pointer-events: none;
+        color: rgba(255, 255, 255, 0.92);
+        text-shadow: 0 1px 14px rgba(0, 0, 0, 0.6);
+        opacity: calc(1 - var(--fade, 0));
+    }
+
+    /* The hint is 10.9px, so AA wants 4.5:1 — which white cannot reach over a
+       pale sunset sky on shadow alone. Same trick as the line above: a radial
+       scrim whose last stop lands exactly on the box edge at zero alpha, so it
+       lifts the word without ever reading as a shape. It inherits the parent's
+       --fade opacity, so it leaves when the hint does. */
+    .portal__scroll::before {
+        content: '';
+        position: absolute;
+        z-index: -1;
+        inset: -1.15rem -3.75rem;
+        pointer-events: none;
+        background: radial-gradient(
+            ellipse 50% 50% at 50% 50%,
+            rgba(12, 8, 4, 0.62) 0%,
+            rgba(12, 8, 4, 0.52) 36%,
+            rgba(12, 8, 4, 0.28) 60%,
+            rgba(12, 8, 4, 0.09) 82%,
+            rgba(12, 8, 4, 0) 100%
+        );
+    }
+
+    .portal__scroll span {
+        font-size: 0.68rem;
+        font-weight: 500;
+        line-height: 1;
+        letter-spacing: 0.34em;
+        /* Tracking leaves a gap after the last letter; the indent pulls the
+           word back so it reads optically centred. */
+        text-indent: 0.34em;
+    }
+
+    /* Chevron drawn from two borders — no icon file, no extra markup. */
+    .portal__scroll::after {
+        content: '';
+        width: 0.55rem;
+        height: 0.55rem;
+        border-right: 1.5px solid currentColor;
+        border-bottom: 1.5px solid currentColor;
+        transform: rotate(45deg);
+        opacity: 0.85;
+        animation: cm-portal-cue 2.6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+    }
+
     /* Phones: a shorter runway, and the JS caps the zoom at 3x to keep the
        composited layer small enough for mobile GPUs. */
     @media (max-width: 639px) {
@@ -433,6 +502,10 @@
 
         .portal__title {
             padding: 0 8vw;
+        }
+
+        .portal__scroll {
+            bottom: 5rem;
         }
     }
 
@@ -485,6 +558,25 @@
     .cm-h2 { font-size: 2.5rem; }
 }
 
+/* The word holds still and only the chevron drifts, so the hint animates
+   without the copy jittering. One slow pass every 2.6s. */
+@keyframes cm-portal-cue {
+    0% {
+        transform: translateY(-0.2rem) rotate(45deg);
+        opacity: 0;
+    }
+    30% {
+        opacity: 0.9;
+    }
+    70% {
+        opacity: 0.5;
+    }
+    100% {
+        transform: translateY(0.4rem) rotate(45deg);
+        opacity: 0;
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     .portal {
         height: auto;
@@ -497,6 +589,15 @@
 
     .portal__wash {
         opacity: 0 !important;
+    }
+
+    /* The blanket rule below collapses every animation to a single 0.001ms
+       pass, which would strand the chevron on its final (invisible) keyframe.
+       Pin it to its resting state so the hint is still legible, just still. */
+    .portal__scroll::after {
+        animation: none !important;
+        transform: rotate(45deg);
+        opacity: 0.85;
     }
 
     *,
