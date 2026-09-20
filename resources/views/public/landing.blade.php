@@ -67,6 +67,21 @@
         </div>
     </section>
 
+    {{-- ───────────────── Portal transition ─────────────────
+         Decorative scroll-driven zoom between the hero and the rest of the
+         page. The image is decorative (alt=""), the wash is aria-hidden, and
+         the single line of copy stays a normal, readable paragraph — the page
+         keeps its one <h1> in the hero above. --}}
+    <section class="portal" id="portal">
+        <div class="portal__stage">
+            <div class="portal__media">
+                <img src="{{ $portal['url'] }}" alt="" fetchpriority="high" decoding="async">
+            </div>
+            <div class="portal__wash" aria-hidden="true"></div>
+            <p class="portal__title">{{ $c('portal_line', __('home.portal_line')) }}</p>
+        </div>
+    </section>
+
     {{-- ───────────────── Why bother ───────────────── --}}
     <section class="mx-auto w-full max-w-5xl px-4 py-5 sm:px-5 sm:py-6">
         <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

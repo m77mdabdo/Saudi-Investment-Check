@@ -26,6 +26,7 @@
                 <div><label class="ad-label">نص زر البداية</label><input name="content[cta_label]" class="ad-input" value="{{ $get('cta_label') }}"></div>
             </div>
             <div><label class="ad-label">كلمات بحث صورة الهيرو (Pexels)</label><input name="hero_image_query" class="ad-input" dir="ltr" value="{{ old('hero_image_query', $page->hero_image_query) }}"></div>
+            <div><label class="ad-label">جملة البوابة (القسم الانتقالي)</label><input name="content[portal_line]" class="ad-input" value="{{ $get('portal_line') }}"></div>
         </section>
 
         <section class="ad-card space-y-3 p-5">

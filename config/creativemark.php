@@ -68,6 +68,9 @@ return [
         // Local fallbacks used whenever the Pexels API is unavailable.
         'fallbacks' => [
             'hero' => 'images/fallback/hero.svg',
+            // Purpose-built artwork for the scroll-driven portal transition:
+            // the zoom targets the doorway, so this one is not interchangeable.
+            'portal' => 'images/fallback/home.webp',
             'result' => 'images/fallback/result.svg',
             'auth' => 'images/fallback/auth.svg',
             'event' => 'images/fallback/event.svg',

@@ -67,6 +67,7 @@ class MediaService
             $slot === 'auth' => 'auth',
             $slot === 'event' => 'event',
             $slot === 'empty' => 'empty',
+            $slot === 'portal' => 'portal',
             default => 'hero',
         };
 
