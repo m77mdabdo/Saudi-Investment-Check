@@ -97,6 +97,7 @@ class PlatformSeeder extends Seeder
             ['key' => 'notify_admin', 'value' => '1', 'type' => 'bool', 'group' => 'notifications', 'label' => 'Email the sales team on every new lead', 'position' => 1],
             ['key' => 'notify_customer', 'value' => '1', 'type' => 'bool', 'group' => 'notifications', 'label' => 'Email the result to the lead (when email provided)', 'position' => 2],
             ['key' => 'notify_status_change', 'value' => '1', 'type' => 'bool', 'group' => 'notifications', 'label' => 'Email the lead when their status reaches a client-facing stage', 'position' => 3],
+            ['key' => 'notify_registration', 'value' => '1', 'type' => 'bool', 'group' => 'notifications', 'label' => 'Email the sales team on every event registration', 'position' => 4],
             ['key' => 'admin_email_locale', 'value' => 'ar', 'type' => 'string', 'group' => 'notifications', 'label' => 'Language of internal sales emails (ar / en)', 'position' => 5],
             ['key' => 'admin_notification_emails', 'value' => '', 'type' => 'string', 'group' => 'notifications', 'label' => 'Sales notification recipients', 'hint' => 'Comma separated. Falls back to MAIL_FROM_ADDRESS.', 'position' => 3],
             ['key' => 'footer_note', 'value' => '© Creative Mark — Creating The Future', 'type' => 'string', 'group' => 'general', 'label' => 'Public footer note (Arabic)', 'position' => 1],
@@ -132,6 +133,30 @@ class PlatformSeeder extends Seeder
 </table>
 <p><a href="{{lead_url}}">افتح الـLead في الداشبورد</a></p>
 HTML,
+            ],
+        );
+
+        NotificationTemplate::updateOrCreate(
+            ['key' => 'admin_new_registration'],
+            [
+                'audience' => 'admin',
+                'name' => 'Sales — new event registration',
+                'subject' => 'تسجيل جديد: {{name}} — {{event}}',
+                'is_active' => true,
+                'body' => <<<'HTML'
+<h2>تسجيل جديد من {{event}}</h2>
+<p><strong>{{name}}</strong> سجّل بياناته عند الاستاند.</p>
+<table>
+  <tr><td>WhatsApp</td><td>{{whatsapp}}</td></tr>
+  <tr><td>Email</td><td>{{email}}</td></tr>
+  <tr><td>Event</td><td>{{event}}</td></tr>
+  <tr><td>Date</td><td>{{date}}</td></tr>
+</table>
+<p><a href="{{lead_url}}">افتح التسجيل في الداشبورد</a></p>
+HTML,
+                'translations' => ['en' => [
+                    'subject' => 'New registration: {{name}} — {{event}}',
+                ]],
             ],
         );
 

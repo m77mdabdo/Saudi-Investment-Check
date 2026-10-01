@@ -65,4 +65,18 @@ return [
         'answer' => 'الإجابة',
         'device' => 'الجهاز',
     ],
+    'admin_registration' => [
+        'subject' => 'تسجيل جديد: :name — :event',
+        'preheader' => ':name سجّل في :event.',
+        'title' => 'تسجيل جديد في الفعالية 📝',
+        'intro' => ':name سجّل بياناته عند الاستاند.',
+        'contact_section' => 'بيانات التواصل',
+        'context_section' => 'تفاصيل',
+        'event_label' => 'الفعالية',
+        'photo_label' => 'الصورة',
+        'photo_yes' => 'مرفقة — افتح لوحة التحكم لعرضها',
+        'photo_no' => 'لا توجد',
+        'locale_label' => 'اللغة',
+        'cta' => 'افتح التسجيل',
+    ],
 ];

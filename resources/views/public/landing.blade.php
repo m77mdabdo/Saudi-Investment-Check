@@ -75,7 +75,13 @@
                  image treatment, same gradients, same max width. Only the
                  contents are the registration form now. --}}
             <div class="relative px-5 py-10 sm:px-10 sm:py-14 lg:px-14 lg:py-16">
-                <div class="mx-auto w-full max-w-xl">
+                {{-- #register is the redirect target after every submit. Without it
+                     the browser lands at the top of the page, where the opaque
+                     sticky portal stage covers this card and its error block —
+                     which is what made a failed submit look like nothing
+                     happening. It wraps both states so success and failure both
+                     land here. --}}
+                <div id="register" class="mx-auto w-full max-w-xl">
                     @if ($registered)
                         {{-- Confirmation. The journey ends here. --}}
                         <div class="cm-fade-up text-center">
@@ -98,7 +104,7 @@
                             <span class="min-w-0">{{ $c('eyebrow', __('home.eyebrow')) }}</span>
                         </span>
 
-                        <h1 id="register" class="cm-fade-up cm-delay-1 cm-h1 mt-5 font-black leading-[1.15] tracking-tight">
+                        <h1 class="cm-fade-up cm-delay-1 cm-h1 mt-5 font-black leading-[1.15] tracking-tight">
                             {{ $c('welcome_title', __('registration.heading')) }}
                         </h1>
 
@@ -197,9 +203,6 @@
                                         <span x-show="!busy">{{ __('registration.photo_choose') }}</span>
                                         <span x-show="busy" x-cloak>{{ __('registration.submitting') }}</span>
                                     </button>
-                                    <p class="mt-2 text-xs text-cream/55">{{ __('registration.photo_hint') }}</p>
-                                    {{-- The form is complete without this field. --}}
-                                    <p class="mt-1 text-xs text-cream/40">{{ __('registration.photo_skip_note') }}</p>
                                 </div>
 
                                 <div x-show="preview" x-cloak class="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/4 p-3">

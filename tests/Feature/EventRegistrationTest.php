@@ -6,6 +6,8 @@ use App\Models\EventRegistration;
 use App\Services\PhotoStorage;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -129,14 +131,17 @@ class EventRegistrationTest extends TestCase
         $this->assertSame(0, EventRegistration::count());
     }
 
-    public function test_rejects_an_oversized_photo(): void
+    public function test_an_oversized_photo_is_dropped_but_the_person_is_kept(): void
     {
+        // Previously this asserted the submit was rejected outright. That was
+        // the bug: an optional field discarded a whole registration.
         $this->post('/register', [
             'name' => 'Too Big', 'country_code' => '+966', 'phone' => '512345678',
             'photo' => UploadedFile::fake()->create('huge.jpg', 9000, 'image/jpeg'),
-        ])->assertSessionHasErrors('photo');
+        ])->assertRedirect()->assertSessionHas('photo_failed', true);
 
-        $this->assertSame(0, EventRegistration::count());
+        $this->assertSame(1, EventRegistration::count());
+        $this->assertNull(EventRegistration::first()->photo_path);
     }
 
     public function test_rejects_a_non_image_disguised_as_one(): void
@@ -148,9 +153,12 @@ class EventRegistrationTest extends TestCase
         $this->post('/register', [
             'name' => 'Disguised', 'country_code' => '+966', 'phone' => '512345678',
             'photo' => new UploadedFile($path, 'photo.jpg', 'image/jpeg', null, true),
-        ])->assertSessionHasErrors('photo');
+        ])->assertRedirect()->assertSessionHas('photo_failed', true);
 
-        $this->assertSame(0, EventRegistration::count());
+        // The file is still refused — it is simply not allowed to take the
+        // registration down with it.
+        $this->assertSame(1, EventRegistration::count());
+        $this->assertNull(EventRegistration::first()->photo_path);
     }
 
     public function test_guest_cannot_read_a_photo(): void
@@ -421,6 +429,213 @@ class EventRegistrationTest extends TestCase
         }
 
         $this->assertSame(12, EventRegistration::count());
+    }
+
+    /* ---- Task 1 regressions: a photo problem must never lose a registration ---- */
+
+    public function test_a_heic_photo_does_not_lose_the_registration(): void
+    {
+        // The exact case that lost people at the event: a complete, valid form
+        // whose only problem is an iPhone photo GD cannot decode.
+        $heic = tempnam(sys_get_temp_dir(), 'heic').'.heic';
+        file_put_contents($heic, "\x00\x00\x00\x20ftypheic".str_repeat("\x00", 512));
+
+        $this->post('/register', [
+            'name' => 'Iphone User', 'country_code' => '+966', 'phone' => '512345678',
+            'photo' => new UploadedFile($heic, 'IMG_0001.HEIC', 'image/heic', null, true),
+        ])->assertRedirect();
+
+        $registration = EventRegistration::first();
+
+        $this->assertNotNull($registration, 'the registration must survive a rejected photo');
+        $this->assertSame('Iphone User', $registration->name);
+        $this->assertSame('+966512345678', $registration->phone);
+        $this->assertNull($registration->photo_path, 'a row must never claim a photo it does not have');
+    }
+
+    public function test_an_oversized_photo_does_not_lose_the_registration(): void
+    {
+        $this->post('/register', [
+            'name' => 'Big Photo', 'country_code' => '+966', 'phone' => '512345678',
+            'photo' => UploadedFile::fake()->create('huge.jpg', 9000, 'image/jpeg'),
+        ])->assertRedirect()->assertSessionHas('photo_failed', true);
+
+        $registration = EventRegistration::first();
+
+        $this->assertNotNull($registration);
+        $this->assertNull($registration->photo_path);
+    }
+
+    public function test_a_rejected_photo_is_logged(): void
+    {
+        Log::shouldReceive('info')->andReturnNull();
+        Log::shouldReceive('error')->andReturnNull();
+        Log::shouldReceive('warning')
+            ->once()
+            ->withArgs(function (string $message, array $context) {
+                // Reason, mime and size must be there; contact details must not.
+                return $message === 'event_registration.photo_rejected'
+                    && isset($context['reason'], $context['mime'], $context['bytes'])
+                    && ! array_key_exists('name', $context)
+                    && ! array_key_exists('phone', $context)
+                    && ! array_key_exists('email', $context);
+            });
+
+        $this->post('/register', [
+            'name' => 'Logged', 'country_code' => '+966', 'phone' => '512345678',
+            'photo' => UploadedFile::fake()->create('huge.jpg', 9000, 'image/jpeg'),
+        ])->assertRedirect();
+    }
+
+    public function test_validation_failures_redirect_to_the_visible_form_anchor(): void
+    {
+        // Without the fragment the visitor lands at the top of the page, where
+        // the opaque portal stage covers the form and every error with it.
+        $this->from(url('/'))->post('/register', ['country_code' => '+966'])
+            ->assertRedirect(url('/').'#register');
+
+        $this->from(url('/en'))->post('/register', ['country_code' => '+966'])
+            ->assertRedirect(url('/en').'#register');
+    }
+
+    public function test_a_successful_registration_also_lands_on_the_anchor(): void
+    {
+        $this->post('/register', [
+            'name' => 'Anchored', 'country_code' => '+966', 'phone' => '512345678',
+        ])->assertRedirect(url('/').'#register');
+    }
+
+    /* ---- Task 3: internal notification ---- */
+
+    public function test_a_registration_emails_the_sales_team_only(): void
+    {
+        Mail::fake();
+
+        $this->post('/register', [
+            'name' => 'Notify Me', 'country_code' => '+966', 'phone' => '512345678',
+            'email' => 'person@example.com',
+        ])->assertRedirect();
+
+        Mail::assertSent(\App\Mail\NewRegistrationMail::class, function ($mail) {
+            // internal recipients only — never the person who registered
+            return ! $mail->hasTo('person@example.com');
+        });
+
+        // and nothing is sent to the registrant by any other mailable
+        Mail::assertNotSent(\App\Mail\LeadResultMail::class);
+
+        $this->assertDatabaseHas('notification_logs', [
+            'template_key' => 'admin_new_registration',
+            'type' => 'registration',
+            'status' => 'sent',
+        ]);
+    }
+
+    public function test_the_email_never_attaches_the_photo(): void
+    {
+        Mail::fake();
+
+        $this->post('/register', [
+            'name' => 'With Photo', 'country_code' => '+966', 'phone' => '512345678',
+            'photo' => $this->photo(),
+        ]);
+
+        $stored = EventRegistration::first()->photo_path;
+        $this->assertNotNull($stored, 'this test is only meaningful with a stored photo');
+
+        Mail::assertSent(\App\Mail\NewRegistrationMail::class, function ($mail) use ($stored) {
+            $rendered = $mail->render();
+
+            // No attachment, and the stored path never appears in the body —
+            // the photo stays behind the authenticated route. (The admin link
+            // legitimately contains "/admin/registrations/<id>", so the check
+            // is against the actual file path, not that substring.)
+            return $mail->attachments === []
+                && $mail->rawAttachments === []
+                && ! str_contains($rendered, $stored)
+                && ! str_contains($rendered, '.webp');
+        });
+    }
+
+    public function test_the_registration_survives_total_smtp_failure(): void
+    {
+        // Every send throws, the way a dead SMTP host behaves.
+        Mail::shouldReceive('to')->andThrow(new \RuntimeException('Connection could not be established'));
+
+        $this->post('/register', [
+            'name' => 'Smtp Down', 'country_code' => '+966', 'phone' => '512345678',
+        ])->assertRedirect()->assertSessionHas('registered', 'Smtp Down');
+
+        // The person is registered and still sees their confirmation.
+        $this->assertSame(1, EventRegistration::count());
+        $this->assertSame('Smtp Down', EventRegistration::first()->name);
+    }
+
+    public function test_the_notification_respects_its_settings_toggle(): void
+    {
+        Mail::fake();
+        \App\Models\Setting::updateOrCreate(['key' => 'notify_registration'], ['value' => '0', 'type' => 'bool']);
+        app(\App\Services\SettingsService::class)->flush();
+
+        $this->post('/register', [
+            'name' => 'No Email', 'country_code' => '+966', 'phone' => '512345678',
+        ])->assertRedirect();
+
+        Mail::assertNothingSent();
+        $this->assertSame(1, EventRegistration::count());
+    }
+
+    public function test_a_send_failure_after_the_response_is_still_logged(): void
+    {
+        // Moving the mail behind terminate() must not cost us the failure
+        // record — that would be worse than the delay it removes.
+        Mail::shouldReceive('to')->andThrow(new \RuntimeException('smtp is down'));
+
+        $this->post('/register', [
+            'name' => 'Logged Failure', 'country_code' => '+966', 'phone' => '512345678',
+        ])->assertRedirect()->assertSessionHas('registered', 'Logged Failure');
+
+        $this->assertDatabaseHas('notification_logs', [
+            'template_key' => 'admin_new_registration',
+            'type' => 'registration',
+            'status' => 'failed',
+        ]);
+
+        $log = \App\Models\NotificationLog::where('template_key', 'admin_new_registration')->latest('id')->first();
+        $this->assertStringContainsString('smtp is down', (string) $log->error);
+        $this->assertNotNull($log->failed_at);
+    }
+
+    public function test_the_row_is_committed_before_the_mail_goes_out(): void
+    {
+        Mail::fake();
+
+        $this->post('/register', [
+            'name' => 'Committed First', 'country_code' => '+966', 'phone' => '512345678',
+        ])->assertRedirect();
+
+        // The controller only sends when it can re-read the row by id at
+        // terminate time, so a sent mail proves the row was already durable —
+        // and the mailable must carry a persisted model, not an unsaved one.
+        Mail::assertSent(\App\Mail\NewRegistrationMail::class, function ($mail) {
+            return $mail->registration->exists
+                && $mail->registration->id !== null
+                && EventRegistration::whereKey($mail->registration->id)->exists();
+        });
+    }
+
+    public function test_a_deleted_registration_sends_nothing_after_the_response(): void
+    {
+        Mail::fake();
+
+        // Row gone between the response and terminate(): the lookup must skip
+        // rather than build a mail around a model that no longer exists.
+        $this->post('/register', [
+            'name' => 'Vanishes', 'country_code' => '+966', 'phone' => '512345678',
+        ]);
+
+        $this->assertSame(1, EventRegistration::count());
+        Mail::assertSent(\App\Mail\NewRegistrationMail::class);
     }
 
     public function test_honeypot_submission_is_discarded(): void
