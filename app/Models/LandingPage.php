@@ -33,6 +33,12 @@ class LandingPage extends Model
     /**
      * Editable content for the active language.
      *
+     * Whatever this returns SHADOWS the lang files: the views call
+     * $c('key', __('home.key')), so a stored value wins and the __() default is
+     * only reached for keys the admin has never saved. A copy change in
+     * lang/{ar,en}/ therefore does nothing on a site whose row already holds
+     * that key — the stored value has to be updated as well.
+     *
      * The base columns hold Arabic; English lives under translations.en.content.
      * For a non-base language only its own values are returned — a key the admin
      * has not translated falls through to the lang file default in the view,

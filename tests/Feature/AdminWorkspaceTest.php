@@ -209,7 +209,7 @@ class AdminWorkspaceTest extends TestCase
         $this->actingAs($this->admin());
 
         $this->put('/admin/cms', [
-            'content' => ['hero_kicker' => 'نص الهيرو الجديد', 'cta_label' => 'يلا نبدأ'],
+            'content' => ['welcome_title' => 'نص الهيرو الجديد', 'welcome_intro' => 'يلا نبدأ'],
             'benefits' => [['icon' => '⚡', 'title' => 'سريع', 'text' => 'خلال دقيقة']],
             'seo_title' => 'Saudi-Ready Check',
         ])->assertRedirect();

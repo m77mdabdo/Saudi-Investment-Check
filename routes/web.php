@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\LeadController;
 use App\Http\Controllers\Admin\MediaController;
 use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\QrSourceController;
+use App\Http\Controllers\Admin\RegistrationController as RegistrationAdminController;
 use App\Http\Controllers\Admin\QuizBuilderController;
 use App\Http\Controllers\Admin\ResultRuleController;
 use App\Http\Controllers\Admin\SettingsController;
@@ -19,6 +20,7 @@ use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\Public\LandingController;
 use App\Http\Controllers\Public\QuizController;
+use App\Http\Controllers\Public\RegistrationController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -54,6 +56,7 @@ Route::post('/quiz/progress', [QuizController::class, 'progress'])->middleware('
 Route::post('/quiz/completed', [QuizController::class, 'completed'])->middleware('throttle:quiz-state')->name('quiz.completed');
 Route::post('/quiz/submit', [QuizController::class, 'submit'])->middleware('throttle:quiz-submit')->name('quiz.submit');
 Route::post('/track', [QuizController::class, 'track'])->middleware('throttle:tracking')->name('track');
+Route::post('/register', [RegistrationController::class, 'store'])->middleware('throttle:registration-submit')->name('registration.store');
 
 // Language switcher: /language/en?redirect=/en/quiz
 Route::get('/language/{locale}', LanguageController::class)
@@ -93,6 +96,15 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::patch('leads/{lead}/assign', [LeadController::class, 'assign'])->name('leads.assign');
         Route::post('leads/{lead}/notes', [LeadController::class, 'storeNote'])->name('leads.notes.store');
         Route::delete('leads/{lead}', [LeadController::class, 'destroy'])->name('leads.destroy');
+
+        // Event registrations (QR ▸ portal ▸ registration form in the landing hero)
+        Route::get('registrations', [RegistrationAdminController::class, 'index'])->name('registrations.index');
+        Route::get('registrations/export', [RegistrationAdminController::class, 'export'])->name('registrations.export');
+        Route::get('registrations/{registration}', [RegistrationAdminController::class, 'show'])->name('registrations.show');
+        // Photo bytes are streamed from the private disk — never a public URL.
+        Route::get('registrations/{registration}/photo', [RegistrationAdminController::class, 'photo'])->name('registrations.photo');
+        Route::delete('registrations/{registration}/photo', [RegistrationAdminController::class, 'destroyPhoto'])->name('registrations.photo.destroy');
+        Route::delete('registrations/{registration}', [RegistrationAdminController::class, 'destroy'])->name('registrations.destroy');
 
         Route::get('analytics', AnalyticsController::class)->name('analytics');
 

@@ -45,6 +45,18 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('quiz-submit', fn (Request $request) => Limit::perMinute(10)->by('quiz-submit|'.$request->ip()));
         RateLimiter::for('quiz-state', fn (Request $request) => Limit::perMinute(180)->by('quiz-state|'.$request->ip()));
         RateLimiter::for('tracking', fn (Request $request) => Limit::perMinute(120)->by('tracking|'.$request->ip()));
+        // Walk-up registrations are the one public form where per-IP limiting is
+        // actively wrong: everyone at the stand is behind one venue NAT address,
+        // so an IP budget is a budget for the whole queue. Two limits instead:
+        //   - 120/min per IP (~2/second) absorbs any realistic queue while still
+        //     sitting one to two orders of magnitude below a scripted flood.
+        //   - 6/min per session is the real abuse control, because one browser
+        //     is one person regardless of how many share the IP.
+        // The honeypot catches the naive bots that never reach either limit.
+        RateLimiter::for('registration-submit', fn (Request $request) => [
+            Limit::perMinute(120)->by('registration-ip|'.$request->ip()),
+            Limit::perMinute(6)->by('registration-session|'.$request->session()->getId()),
+        ]);
         RateLimiter::for('admin-login', fn (Request $request) => Limit::perMinute(10)
             ->by('admin-login|'.$request->ip().'|'.strtolower((string) $request->input('email'))));
 

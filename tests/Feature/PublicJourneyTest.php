@@ -22,10 +22,11 @@ class PublicJourneyTest extends TestCase
 
     public function test_landing_page_renders_and_records_a_view(): void
     {
+        // The hero card holds the registration form; the quiz is not in this flow.
         $this->get('/')
             ->assertOk()
-            ->assertSee('السعودية مستنياك', false)
-            ->assertSee('ابدأ الرحله', false);
+            ->assertSee(__('registration.heading', [], 'ar'), false)
+            ->assertSee(__('registration.submit', [], 'ar'), false);
 
         $this->assertDatabaseHas('analytics_events', ['name' => 'landing_page_view']);
     }

@@ -242,6 +242,109 @@ Alpine.data('phoneField', (config) => ({
 }))
 
 window.Alpine = Alpine
+/**
+ * Optional photo field for the event registration form.
+ *
+ * Two jobs beyond showing a preview:
+ *
+ *  1. HEIC. iPhones shoot HEIC and GD cannot decode it, so an unconverted file
+ *     is a rejected upload — i.e. that person leaves the stand without their
+ *     photo. Safari decodes HEIC natively, which is exactly where HEIC comes
+ *     from, so drawing it to a canvas and re-exporting as JPEG converts it with
+ *     no library. Browsers that cannot decode it fall through to the server's
+ *     translated "format not supported" message.
+ *  2. Size. The canvas pass also caps the longest edge, so a 12MP phone photo
+ *     does not hit the 8MB limit before it ever reaches validation.
+ *
+ * The file input itself carries accept="image/*" and NO capture attribute, so
+ * the OS offers both the camera and the gallery.
+ */
+Alpine.data('photoField', (config) => ({
+    preview: null,
+    busy: false,
+    error: null,
+    maxEdge: config.maxEdge ?? 1600,
+    messages: config.messages ?? {},
+
+    async pick(event) {
+        var file = event.target.files && event.target.files[0]
+        this.error = null
+
+        if (!file) {
+            this.clear()
+            return
+        }
+
+        if (this.isHeic(file)) {
+            this.busy = true
+            try {
+                file = await this.toJpeg(file)
+                this.replaceInput(file)
+            } catch (e) {
+                // Left on the input as-is; the server returns the translated
+                // message for the format rather than a silent failure.
+                this.error = this.messages.unsupported || null
+            } finally {
+                this.busy = false
+            }
+        }
+
+        if (this.preview) URL.revokeObjectURL(this.preview)
+        this.preview = URL.createObjectURL(file)
+    },
+
+    isHeic(file) {
+        return /image\/hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name || '')
+    },
+
+    /** Decode through an <img>, which also applies EXIF rotation, then re-encode. */
+    toJpeg(file) {
+        var self = this
+        return new Promise(function (resolve, reject) {
+            var url = URL.createObjectURL(file)
+            var img = new Image()
+
+            img.onload = function () {
+                var ratio = Math.min(1, self.maxEdge / Math.max(img.width, img.height))
+                var canvas = document.createElement('canvas')
+                canvas.width = Math.round(img.width * ratio)
+                canvas.height = Math.round(img.height * ratio)
+                canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height)
+                URL.revokeObjectURL(url)
+
+                canvas.toBlob(function (blob) {
+                    if (!blob) return reject(new Error('encode failed'))
+                    resolve(new File([blob], (file.name || 'photo').replace(/\.hei[cf]$/i, '') + '.jpg', {
+                        type: 'image/jpeg',
+                        lastModified: Date.now(),
+                    }))
+                }, 'image/jpeg', 0.9)
+            }
+
+            img.onerror = function () {
+                URL.revokeObjectURL(url)
+                reject(new Error('decode failed'))
+            }
+
+            img.src = url
+        })
+    },
+
+    /** Put the converted file back on the input so the form submits it. */
+    replaceInput(file) {
+        var transfer = new DataTransfer()
+        transfer.items.add(file)
+        this.$refs.input.files = transfer.files
+    },
+
+    clear() {
+        if (this.preview) URL.revokeObjectURL(this.preview)
+        this.preview = null
+        this.error = null
+        this.$refs.input.value = ''
+    },
+}))
+
 Alpine.start()
 
 /**

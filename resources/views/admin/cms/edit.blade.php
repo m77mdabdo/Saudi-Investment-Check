@@ -17,16 +17,14 @@
         <section class="ad-card space-y-3 p-5">
             <h2 class="text-sm font-black uppercase tracking-wider text-slate-400">Hero</h2>
             <div><label class="ad-label">Eyebrow</label><input name="content[eyebrow]" class="ad-input" value="{{ $get('eyebrow') }}"></div>
-            <div><label class="ad-label">العنوان الكبير</label><input name="content[hero_kicker]" class="ad-input" value="{{ $get('hero_kicker') }}"></div>
-            <div><label class="ad-label">السطر التمهيدي</label><input name="content[hero_lead]" class="ad-input" value="{{ $get('hero_lead') }}"></div>
-            <div><label class="ad-label">السؤال الرئيسي</label><input name="content[hero_title]" class="ad-input" value="{{ $get('hero_title') }}"></div>
-            <div><label class="ad-label">الوصف (سطر لكل جملة)</label><textarea name="content[hero_description]" class="ad-textarea" rows="4">{{ $get('hero_description') }}</textarea></div>
-            <div class="grid grid-cols-2 gap-3">
-                <div><label class="ad-label">المؤشر الصغير</label><input name="content[hero_meta]" class="ad-input" value="{{ $get('hero_meta') }}"></div>
-                <div><label class="ad-label">نص زر البداية</label><input name="content[cta_label]" class="ad-input" value="{{ $get('cta_label') }}"></div>
-            </div>
             <div><label class="ad-label">كلمات بحث صورة الهيرو (Pexels)</label><input name="hero_image_query" class="ad-input" dir="ltr" value="{{ old('hero_image_query', $page->hero_image_query) }}"></div>
             <div><label class="ad-label">جملة البوابة (القسم الانتقالي)</label><input name="content[portal_line]" class="ad-input" value="{{ $get('portal_line') }}"></div>
+        </section>
+
+        <section class="ad-card space-y-3 p-5">
+            <h2 class="text-sm font-black uppercase tracking-wider text-slate-400">صفحة الترحيب (تسجيل الفعالية)</h2>
+            <div><label class="ad-label">عنوان صفحة الترحيب</label><input name="content[welcome_title]" class="ad-input" value="{{ $get('welcome_title') }}"></div>
+            <div><label class="ad-label">نص صفحة الترحيب</label><textarea name="content[welcome_intro]" class="ad-textarea" rows="3">{{ $get('welcome_intro') }}</textarea></div>
         </section>
 
         <section class="ad-card space-y-3 p-5">

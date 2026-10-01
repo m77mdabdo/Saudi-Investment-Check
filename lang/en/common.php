@@ -37,5 +37,4 @@ return [
     'confirm_delete' => 'Are you sure you want to delete this?',
     'no_results' => 'No results',
     'footer_rights' => '© :year :brand — All rights reserved.',
-    'disclaimer' => 'A preliminary readiness assessment — not legal or financial advice.',
 ];
