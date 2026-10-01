@@ -25,18 +25,45 @@ class EventRegistrationRequest extends FormRequest
             'phone' => ['required', 'string', 'min:6', 'max:20', 'regex:/^[0-9\s\-\(\)]+$/'],
             'email' => ['nullable', 'email:rfc', 'max:190'],
 
-            // 'image' runs getimagesize(), and 'mimetypes' sniffs the real
-            // content type — neither trusts the filename extension. HEIC is
-            // excluded on purpose: GD cannot decode it (see the lang file for
-            // the message the visitor actually sees).
+            'website' => ['nullable', 'size:0'], // honeypot
+        ];
+    }
+
+    /**
+     * Photo rules, deliberately NOT part of rules().
+     *
+     * The photo is optional, so it must never be able to fail the request: when
+     * it lived in rules() a rejected photo discarded the whole submission —
+     * name, phone and email with it — and an iPhone's HEIC did exactly that at
+     * an event. The controller validates it separately and, on failure, saves
+     * the registration with photo_path null.
+     *
+     * 'image' runs getimagesize() and 'mimetypes' sniffs the real content type;
+     * neither trusts the filename extension. HEIC is excluded because GD cannot
+     * decode it.
+     *
+     * @return array<string,array<int,string>>
+     */
+    public static function photoRules(): array
+    {
+        return [
             'photo' => [
                 'nullable', 'file', 'image',
                 'mimetypes:image/jpeg,image/png,image/webp',
                 'max:'.self::MAX_PHOTO_KB,
             ],
-
-            'website' => ['nullable', 'size:0'], // honeypot
         ];
+    }
+
+    /**
+     * Validation failures must land where the visitor can see them. Without the
+     * fragment the redirect goes to the top of the page, which is the portal
+     * section — an opaque, sticky stage that covers the form and its error
+     * block entirely. The submit then looks exactly like nothing happened.
+     */
+    protected function getRedirectUrl(): string
+    {
+        return $this->redirector->getUrlGenerator()->previous().'#register';
     }
 
     public function attributes(): array
@@ -50,14 +77,22 @@ class EventRegistrationRequest extends FormRequest
         ];
     }
 
+    /** Per-rule photo messages, shared with the controller's separate check. */
+    public static function photoMessages(): array
+    {
+        return [
+            'photo.mimetypes' => __('registration.errors.photo_format'),
+            'photo.image' => __('registration.errors.photo_format'),
+            'photo.file' => __('registration.errors.photo_format'),
+            'photo.max' => __('registration.errors.photo_size', ['mb' => (int) (self::MAX_PHOTO_KB / 1024)]),
+        ];
+    }
+
     public function messages(): array
     {
         return [
             // Generic "invalid file" tells the visitor nothing actionable at a
             // live event; naming the formats does.
-            'photo.mimetypes' => __('registration.errors.photo_format'),
-            'photo.image' => __('registration.errors.photo_format'),
-            'photo.max' => __('registration.errors.photo_size', ['mb' => (int) (self::MAX_PHOTO_KB / 1024)]),
             'phone.regex' => __('registration.errors.phone_format'),
         ];
     }

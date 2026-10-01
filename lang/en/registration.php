@@ -14,7 +14,6 @@ return [
     ],
 
     'optional' => 'optional',
-    'photo_hint' => 'Take a photo or choose one from your gallery.',
     'photo_choose' => 'Add a photo',
     'photo_replace' => 'Replace',
     'photo_remove' => 'Remove',
@@ -25,7 +24,6 @@ return [
 
     // The form is complete without a photo; say so rather than leaving a blank
     // field that reads like a missed step.
-    'photo_skip_note' => 'No photo needed — you can register without one.',
 
     'errors' => [
         'photo_format' => 'That photo format is not supported. Please choose a JPEG, PNG or WebP image.',

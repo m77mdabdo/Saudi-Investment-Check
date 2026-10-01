@@ -65,4 +65,18 @@ return [
         'answer' => 'Answer',
         'device' => 'Device',
     ],
+    'admin_registration' => [
+        'subject' => 'New registration: :name — :event',
+        'preheader' => ':name registered at :event.',
+        'title' => 'New event registration 📝',
+        'intro' => ':name just registered at the stand.',
+        'contact_section' => 'Contact details',
+        'context_section' => 'Context',
+        'event_label' => 'Event',
+        'photo_label' => 'Photo',
+        'photo_yes' => 'Attached — open the dashboard to view it',
+        'photo_no' => 'None',
+        'locale_label' => 'Language',
+        'cta' => 'Open the registration',
+    ],
 ];

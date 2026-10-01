@@ -6,8 +6,10 @@ use App\Mail\BrandedMail;
 use App\Mail\LeadResultMail;
 use App\Mail\LeadStatusMail;
 use App\Mail\NewLeadMail;
+use App\Mail\NewRegistrationMail;
 use App\Mail\TestMail;
 use App\Models\AdminNotification;
+use App\Models\EventRegistration;
 use App\Models\Lead;
 use App\Models\NotificationLog;
 use App\Models\NotificationTemplate;
@@ -51,6 +53,71 @@ class NotificationService
         if ($lead->email && $this->enabled('notify_customer', config('creativemark.notifications.notify_customer'))) {
             $this->safely('customer_email', fn () => $this->sendCustomerResult($lead));
         }
+    }
+
+    /* ------------------------------------------------- Event registrations */
+
+    /**
+     * Runs synchronously inside the submit request, like leadCreated().
+     *
+     * Every step goes through safely(), so a dead SMTP server, a missing
+     * template or an unreachable mail host cannot reach the caller: the row is
+     * already committed by the time this runs and the visitor still gets their
+     * confirmation. Failures land in notification_logs next to the lead mail.
+     */
+    public function registrationCreated(EventRegistration $registration): void
+    {
+        $this->safely('registration_relations', fn () => $registration->loadMissing(['event', 'qrSource']));
+
+        if ($this->enabled('notify_registration', config('creativemark.notifications.notify_registration', true))) {
+            $this->safely('registration_email', fn () => $this->sendRegistrationAlert($registration));
+        }
+    }
+
+    /** Internal only — the person who registered is never emailed. */
+    public function sendRegistrationAlert(EventRegistration $registration): bool
+    {
+        $recipients = $this->adminRecipients();
+
+        if ($recipients === []) {
+            $this->log(null, 'admin_new_registration', '—', null, 'skipped', 'No admin recipients configured', 'registration');
+
+            return false;
+        }
+
+        $locale = $this->adminLocale();
+        $sent = false;
+
+        foreach ($recipients as $recipient) {
+            $mailable = new NewRegistrationMail(
+                registration: $registration,
+                registrationUrl: route('admin.registrations.show', $registration),
+                locale: $locale,
+                subjectLine: $this->registrationSubject($registration, $locale),
+            );
+
+            $sent = $this->deliver($mailable, $recipient, null, 'admin_new_registration', 'registration', $locale) || $sent;
+        }
+
+        return $sent;
+    }
+
+    /** Admin-editable subject line, same mechanism as the lead templates. */
+    protected function registrationSubject(EventRegistration $registration, string $locale): ?string
+    {
+        $template = $this->template('admin_new_registration');
+
+        if (! $template || ! $template->is_active) {
+            return null;
+        }
+
+        return $template->render('subject', [
+            'name' => $registration->name,
+            'whatsapp' => $registration->phone,
+            'email' => (string) $registration->email,
+            'event' => (string) ($registration->event?->t('name', $locale) ?? ''),
+            'date' => (string) $registration->created_at?->format('d M Y H:i'),
+        ], $locale) ?: null;
     }
 
     /** Never let one notification step take the others (or the request) down. */

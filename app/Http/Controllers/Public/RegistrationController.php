@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Public;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\EventRegistrationRequest;
+use Illuminate\Support\Facades\Validator;
 use App\Models\EventRegistration;
+use App\Services\NotificationService;
 use App\Services\PhotoStorage;
 use App\Services\VisitorContext;
 use Illuminate\Http\RedirectResponse;
@@ -17,6 +19,7 @@ class RegistrationController extends Controller
     public function __construct(
         protected VisitorContext $context,
         protected PhotoStorage $photos,
+        protected NotificationService $notifications,
     ) {}
 
     public function store(EventRegistrationRequest $request): RedirectResponse
@@ -32,25 +35,55 @@ class RegistrationController extends Controller
         $photoPath = null;
         $photoFailed = false;
 
-        // The photo is optional, so a photo problem must never cost someone
-        // their registration — at an event they have already walked away. The
-        // row is saved either way; the failure is logged and surfaced quietly
-        // on the confirmation. A row must also never claim a photo that is not
-        // on disk, hence photo_path stays null.
+        // The photo is optional, so NO photo problem may cost someone their
+        // registration — at an event they have already walked away. Both ways a
+        // photo can fail are handled here, outside the request's own rules:
+        //
+        //   1. it fails validation (an iPhone's HEIC, something oversized), and
+        //   2. it fails to write (a full disk).
+        //
+        // Either way the row is saved with photo_path null, the failure is
+        // logged, and the confirmation says the photo did not save. A row never
+        // claims a photo that is not on disk.
         if ($request->hasFile('photo')) {
-            try {
-                $photoPath = $this->photos->store($request->file('photo'), $uuid);
-            } catch (Throwable $e) {
+            $photo = $request->file('photo');
+
+            $validator = Validator::make(
+                ['photo' => $photo],
+                EventRegistrationRequest::photoRules(),
+                EventRegistrationRequest::photoMessages(),
+            );
+
+            if ($validator->fails()) {
                 $photoFailed = true;
 
-                Log::error('event_registration.photo_failed', [
+                // Previously this path wrote nothing at all, which is why a
+                // whole class of lost registrations was invisible. No contact
+                // details here — the filename is omitted because people name
+                // photos after themselves.
+                Log::warning('event_registration.photo_rejected', [
                     'uuid' => $uuid,
-                    'reason' => $e->getMessage(),
-                    'original_name' => $request->file('photo')?->getClientOriginalName(),
-                    'original_mime' => $request->file('photo')?->getMimeType(),
-                    'original_bytes' => $request->file('photo')?->getSize(),
+                    'reason' => $validator->errors()->first('photo'),
+                    'mime' => $photo->getMimeType(),
+                    'client_mime' => $photo->getClientMimeType(),
+                    'extension' => $photo->getClientOriginalExtension(),
+                    'bytes' => $photo->getSize(),
                     'locale' => app()->getLocale(),
                 ]);
+            } else {
+                try {
+                    $photoPath = $this->photos->store($photo, $uuid);
+                } catch (Throwable $e) {
+                    $photoFailed = true;
+
+                    Log::error('event_registration.photo_failed', [
+                        'uuid' => $uuid,
+                        'reason' => $e->getMessage(),
+                        'mime' => $photo->getMimeType(),
+                        'bytes' => $photo->getSize(),
+                        'locale' => app()->getLocale(),
+                    ]);
+                }
             }
         }
 
@@ -79,6 +112,27 @@ class RegistrationController extends Controller
             throw $e;
         }
 
+        // The sales alert is internal, so the visitor has no reason to wait for
+        // it — at a crowded stand on bad wifi the SMTP round-trip was adding
+        // about a second to every submit. terminating() runs after the response
+        // has been sent, so the confirmation is already on their screen.
+        //
+        // The row is re-fetched by id rather than captured by reference: the
+        // insert above is a single auto-committed statement so it is already
+        // durable here, but re-reading makes that a fact at send time instead
+        // of an assumption, and skips cleanly if the row has since gone.
+        // NotificationService::safely() still wraps every step, so a failure
+        // after the response is logged to notification_logs exactly as before.
+        $registrationId = $registration->id;
+
+        app()->terminating(function () use ($registrationId) {
+            $fresh = EventRegistration::find($registrationId);
+
+            if ($fresh) {
+                $this->notifications->registrationCreated($fresh);
+            }
+        });
+
         // Ids and outcome only — never the contact details themselves.
         Log::info('event_registration.created', [
             'registration_id' => $registration->id,
@@ -90,7 +144,7 @@ class RegistrationController extends Controller
         ]);
 
         return redirect()
-            ->to(lroute('landing'))
+            ->to(lroute('landing').'#register')
             ->with('registered', $registration->name)
             ->with('photo_failed', $photoFailed);
     }

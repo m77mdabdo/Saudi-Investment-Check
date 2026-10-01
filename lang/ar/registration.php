@@ -14,7 +14,6 @@ return [
     ],
 
     'optional' => 'اختياري',
-    'photo_hint' => 'التقط صورة أو اخترها من معرض الصور.',
     'photo_choose' => 'أضف صورة',
     'photo_replace' => 'استبدال',
     'photo_remove' => 'حذف',
@@ -23,7 +22,6 @@ return [
     'submit' => 'تسجيل',
     'submitting' => 'جارٍ الإرسال…',
 
-    'photo_skip_note' => 'الصورة غير مطلوبة — تقدر تسجّل من غيرها.',
 
     'errors' => [
         'photo_format' => 'صيغة الصورة غير مدعومة. من فضلك اختر صورة بصيغة JPEG أو PNG أو WebP.',
