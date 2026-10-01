@@ -219,11 +219,11 @@ class EnglishContentSeeder extends Seeder
                 'lead_text' => 'Leave your details and we will show your Saudi-Ready Check result.',
                 'lead_cta' => 'Show my result',
                 'consent_text' => 'I agree to be contacted by the Creative Mark team about my assessment result and Saudi market entry options.',
-                'footer_note' => 'A preliminary readiness assessment — not legal or financial advice.',
+                'footer_note' => 'We use your details only to contact you about your enquiry.',
                 'benefits' => [
-                    ['icon' => '⚡', 'title' => 'Under 60 seconds', 'text' => 'Tap to choose — nothing to type.'],
-                    ['icon' => '🎯', 'title' => 'A clear result', 'text' => 'Know exactly where you stand.'],
-                    ['icon' => '🤝', 'title' => 'A practical next step', 'text' => 'A consultant tells you where to begin.'],
+                    ['icon' => '⚡', 'title' => 'Done in seconds', 'text' => 'Just your name and phone.'],
+                    ['icon' => '📞', 'title' => "We'll be in touch", 'text' => 'The team calls you after the event.'],
+                    ['icon' => '🤝', 'title' => "We'll help you start right", 'text' => 'Setup, licensing, costs — tell us what you need.'],
                 ],
             ],
         ]);

@@ -11,6 +11,7 @@
         ],
         __('admin.nav.sales') => [
             ['label' => __('admin.nav.leads'), 'route' => 'admin.leads.index', 'icon' => 'leads', 'active' => 'admin.leads.*'],
+            ['label' => __('admin.nav.registrations'), 'route' => 'admin.registrations.index', 'icon' => 'users', 'active' => 'admin.registrations.*'],
             ['label' => __('admin.nav.notifications'), 'route' => 'admin.notifications.index', 'icon' => 'bell', 'active' => 'admin.notifications.index'],
             ['label' => __('admin.nav.email_logs'), 'route' => 'admin.emails.index', 'icon' => 'mail', 'active' => 'admin.emails.*'],
         ],

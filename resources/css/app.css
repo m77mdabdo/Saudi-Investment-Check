@@ -526,6 +526,14 @@
         }
     }
 
+/* Alpine's x-cloak: elements marked with it must stay hidden until Alpine has
+   initialised. Declared here rather than in a per-page <style> block, because a
+   page that forgets it renders every collapsed dropdown and panel expanded —
+   which is exactly what happened when the registration form moved pages. */
+[x-cloak] {
+    display: none !important;
+}
+
 @layer utilities {
     .cm-step-enter {
         animation: cm-step-in 0.36s cubic-bezier(0.22, 1, 0.36, 1) both;

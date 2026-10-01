@@ -22,7 +22,7 @@ class LocalizationTest extends TestCase
 
     public function test_arabic_keeps_the_original_urls(): void
     {
-        $this->get('/')->assertOk()->assertSee('السعودية مستنياك', false);
+        $this->get('/')->assertOk()->assertSee(__('registration.heading', [], 'ar'), false);
         $this->get('/quiz')->assertOk();
 
         $this->assertSame(url('/'), route('landing'));
@@ -33,10 +33,10 @@ class LocalizationTest extends TestCase
         $response = $this->get('/en');
 
         $response->assertOk()
-            ->assertSee('Saudi Arabia is waiting for you', false)
+            ->assertSee(__('registration.heading', [], 'en'), false)
             ->assertSee('lang="en"', false)
             ->assertSee('dir="ltr"', false)
-            ->assertDontSee('السعودية مستنياك', false);
+            ->assertDontSee(__('registration.heading', [], 'ar'), false);
     }
 
     public function test_the_quiz_content_itself_is_translated(): void

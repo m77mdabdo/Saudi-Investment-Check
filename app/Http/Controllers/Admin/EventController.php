@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Event;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -72,7 +73,19 @@ class EventController extends Controller
         $data['is_default'] = $request->boolean('is_default');
 
         if ($request->hasFile('logo')) {
-            $data['logo_path'] = $request->file('logo')->store('events', 'public');
+            // store() returns false on failure and the 'public' disk is also
+            // configured with 'throw' => false, so an unchecked result writes
+            // an empty logo_path and the admin sees a broken image with no
+            // error. Same shape as the registration photo bug.
+            $stored = $request->file('logo')->store('events', 'public');
+
+            if ($stored === false) {
+                throw ValidationException::withMessages([
+                    'logo' => __('forms.error'),
+                ]);
+            }
+
+            $data['logo_path'] = $stored;
         }
 
         unset($data['logo']);

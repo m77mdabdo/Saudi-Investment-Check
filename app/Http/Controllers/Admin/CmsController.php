@@ -9,6 +9,16 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
+/**
+ * Landing-page content editor.
+ *
+ * IMPORTANT — stored CMS content wins over the lang files. Anything saved here
+ * is read back by LandingPage::localizedContent() and used in place of the
+ * __('home.*') default, so changing a lang file alone will NOT change the live
+ * page for any key an admin (or a seeder) has already stored. To ship a copy
+ * change you must update the stored value too — see
+ * `php artisan app:refresh-registration-copy` for how that is done safely.
+ */
 class CmsController extends Controller
 {
     public function edit(): View
@@ -33,14 +43,10 @@ class CmsController extends Controller
             'hero_image_query' => ['nullable', 'string', 'max:120'],
             'content' => ['array'],
             'content.eyebrow' => ['nullable', 'string', 'max:120'],
-            'content.hero_kicker' => ['nullable', 'string', 'max:160'],
-            'content.hero_lead' => ['nullable', 'string', 'max:160'],
-            'content.hero_title' => ['nullable', 'string', 'max:200'],
-            'content.hero_description' => ['nullable', 'string', 'max:800'],
-            'content.hero_meta' => ['nullable', 'string', 'max:120'],
-            'content.cta_label' => ['nullable', 'string', 'max:80'],
             'content.portal_line' => ['nullable', 'string', 'max:120'],
             'content.quiz_intro' => ['nullable', 'string', 'max:200'],
+            'content.welcome_title' => ['nullable', 'string', 'max:200'],
+            'content.welcome_intro' => ['nullable', 'string', 'max:400'],
             'content.lead_headline' => ['nullable', 'string', 'max:200'],
             'content.lead_text' => ['nullable', 'string', 'max:300'],
             'content.lead_cta' => ['nullable', 'string', 'max:80'],
