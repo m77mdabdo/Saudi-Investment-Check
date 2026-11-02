@@ -11,9 +11,8 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 use PhpOffice\PhpSpreadsheet\Cell\StringValueBinder;
 
 /**
- * Every cell is bound as a string. Without this the default binder reads
- * "+966512345678" as a number and writes "966512345678", silently dropping the
- * leading + and with it the country code.
+ * Every cell is bound as a string. The default binder reads "+966512345678" as
+ * a number and drops the leading +, taking the country code with it.
  */
 class RegistrationsExport extends StringValueBinder implements FromQuery, WithCustomValueBinder, WithHeadings, WithMapping
 {
@@ -36,8 +35,7 @@ class RegistrationsExport extends StringValueBinder implements FromQuery, WithCu
     /** @param EventRegistration $row */
     public function map($row): array
     {
-        // Three columns only. The photo is viewable in the dashboard and is
-        // deliberately not exported.
+        // Three columns only. The photo stays in the dashboard.
         return [
             $row->name,
             $row->email,

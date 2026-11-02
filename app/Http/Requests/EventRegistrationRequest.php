@@ -30,17 +30,11 @@ class EventRegistrationRequest extends FormRequest
     }
 
     /**
-     * Photo rules, deliberately NOT part of rules().
+     * Kept out of rules() on purpose: an optional field must not be able to
+     * fail the whole request. The controller applies these separately.
      *
-     * The photo is optional, so it must never be able to fail the request: when
-     * it lived in rules() a rejected photo discarded the whole submission —
-     * name, phone and email with it — and an iPhone's HEIC did exactly that at
-     * an event. The controller validates it separately and, on failure, saves
-     * the registration with photo_path null.
-     *
-     * 'image' runs getimagesize() and 'mimetypes' sniffs the real content type;
-     * neither trusts the filename extension. HEIC is excluded because GD cannot
-     * decode it.
+     * 'image' runs getimagesize() and 'mimetypes' sniffs the real content type,
+     * so neither trusts the extension. HEIC is out because GD cannot decode it.
      *
      * @return array<string,array<int,string>>
      */
@@ -56,10 +50,8 @@ class EventRegistrationRequest extends FormRequest
     }
 
     /**
-     * Validation failures must land where the visitor can see them. Without the
-     * fragment the redirect goes to the top of the page, which is the portal
-     * section — an opaque, sticky stage that covers the form and its error
-     * block entirely. The submit then looks exactly like nothing happened.
+     * The fragment matters: without it the redirect lands at the top of the
+     * page, where the portal stage covers the form and its errors.
      */
     protected function getRedirectUrl(): string
     {
@@ -77,7 +69,7 @@ class EventRegistrationRequest extends FormRequest
         ];
     }
 
-    /** Per-rule photo messages, shared with the controller's separate check. */
+    /** Shared with the controller's separate photo check. */
     public static function photoMessages(): array
     {
         return [
@@ -97,7 +89,7 @@ class EventRegistrationRequest extends FormRequest
         ];
     }
 
-    /** Normalised E.164-style number — same rules as the quiz lead form. */
+    /** Normalised E.164 number, same rules as the quiz lead form. */
     public function e164(): string
     {
         $digits = preg_replace('/\D+/', '', (string) $this->input('phone'));

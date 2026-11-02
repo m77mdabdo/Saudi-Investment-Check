@@ -1,17 +1,14 @@
 @php
-    // Stored CMS content WINS over these lang-file defaults: $c() only falls
+    // Stored CMS content wins over these lang-file defaults: $c() only falls
     // back to __() for a key the admin has not saved. Changing a lang file
-    // alone will not change the live page for any key already stored — the
-    // stored value must be updated too (see app:refresh-registration-copy).
+    // alone leaves the live page untouched (see app:refresh-registration-copy).
     $c = fn (string $key, $default = null) => data_get($content, $key) ?: $default;
     $registered = session('registered');
     $photoFailed = (bool) session('photo_failed');
 
-    // Context badge. Both halves come from the active Event record (editable at
-    // Admin ▸ Events), so the badge and the registration's event attribution
-    // can never disagree. array_filter drops whatever is missing: no event
-    // renders nothing, an event with no dates renders the name alone — never a
-    // dangling separator. date_range is '' unless a start date exists.
+    // Context badge, built from the active Event record so it cannot disagree
+    // with the registration's attribution. array_filter drops whatever is
+    // missing, so a missing half never leaves a dangling separator.
     $eventBadge = $event ? array_filter([$event->t('name'), $event->date_range]) : [];
 
     $benefits = data_get($content, 'benefits');
@@ -75,12 +72,9 @@
                  image treatment, same gradients, same max width. Only the
                  contents are the registration form now. --}}
             <div class="relative px-5 py-10 sm:px-10 sm:py-14 lg:px-14 lg:py-16">
-                {{-- #register is the redirect target after every submit. Without it
-                     the browser lands at the top of the page, where the opaque
-                     sticky portal stage covers this card and its error block —
-                     which is what made a failed submit look like nothing
-                     happening. It wraps both states so success and failure both
-                     land here. --}}
+                {{-- Redirect target after every submit. Without it the browser lands
+                     at the top of the page, where the portal stage covers this card.
+                     Wraps both states so success and failure land here. --}}
                 <div id="register" class="mx-auto w-full max-w-xl">
                     @if ($registered)
                         {{-- Confirmation. The journey ends here. --}}

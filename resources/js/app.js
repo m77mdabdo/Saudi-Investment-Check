@@ -243,21 +243,12 @@ Alpine.data('phoneField', (config) => ({
 
 window.Alpine = Alpine
 /**
- * Optional photo field for the event registration form.
+ * Optional photo field: preview, HEIC conversion and a size cap.
  *
- * Two jobs beyond showing a preview:
- *
- *  1. HEIC. iPhones shoot HEIC and GD cannot decode it, so an unconverted file
- *     is a rejected upload — i.e. that person leaves the stand without their
- *     photo. Safari decodes HEIC natively, which is exactly where HEIC comes
- *     from, so drawing it to a canvas and re-exporting as JPEG converts it with
- *     no library. Browsers that cannot decode it fall through to the server's
- *     translated "format not supported" message.
- *  2. Size. The canvas pass also caps the longest edge, so a 12MP phone photo
- *     does not hit the 8MB limit before it ever reaches validation.
- *
- * The file input itself carries accept="image/*" and NO capture attribute, so
- * the OS offers both the camera and the gallery.
+ * iPhones shoot HEIC, which GD cannot decode. Safari can, so the canvas pass
+ * re-exports it as JPEG without a library; browsers that cannot decode it fall
+ * back to the server's "format not supported" message. The same pass caps the
+ * longest edge so a 12MP photo stays under the upload limit.
  */
 Alpine.data('photoField', (config) => ({
     preview: null,
@@ -281,8 +272,7 @@ Alpine.data('photoField', (config) => ({
                 file = await this.toJpeg(file)
                 this.replaceInput(file)
             } catch (e) {
-                // Left on the input as-is; the server returns the translated
-                // message for the format rather than a silent failure.
+                // Left on the input; the server returns the format message.
                 this.error = this.messages.unsupported || null
             } finally {
                 this.busy = false
@@ -297,7 +287,7 @@ Alpine.data('photoField', (config) => ({
         return /image\/hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name || '')
     },
 
-    /** Decode through an <img>, which also applies EXIF rotation, then re-encode. */
+    /** Decode through an <img>, which applies EXIF rotation, then re-encode. */
     toJpeg(file) {
         var self = this
         return new Promise(function (resolve, reject) {
@@ -330,7 +320,7 @@ Alpine.data('photoField', (config) => ({
         })
     },
 
-    /** Put the converted file back on the input so the form submits it. */
+    /** Put the converted file back on the input so it submits. */
     replaceInput(file) {
         var transfer = new DataTransfer()
         transfer.items.add(file)

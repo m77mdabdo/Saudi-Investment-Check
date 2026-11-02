@@ -26,3 +26,12 @@ Thumbs.db
 # public/build   → COMMITTED on purpose: the server has no Node build step.
 # public/storage → COMMITTED symlink so uploaded media works after a pull.
 # .htaccess      → COMMITTED: without it the domain answers 403.
+
+# Editor and tooling scratch directories
+.kilo
+.cursor
+.aider*
+.claude
+
+# Internal audit notes, not for the public repository
+AUDIT.md

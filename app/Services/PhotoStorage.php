@@ -8,16 +8,13 @@ use Illuminate\Support\Str;
 use RuntimeException;
 
 /**
- * Normalises a visitor-supplied photo before it is stored.
+ * Normalises an uploaded photo: rotate, strip metadata, downscale, encode WebP.
  *
- * Phone photos arrive with GPS coordinates, device model and a rotation flag.
- * The pipeline is deliberately ordered: orientation is read and APPLIED first,
- * because stripping the metadata is what discards the flag — strip first and
- * every portrait photo lands sideways. Re-encoding through GD is what removes
- * the metadata; GD carries no EXIF through to its output.
+ * Order matters. Orientation is applied before the metadata is stripped,
+ * otherwise portrait photos end up sideways. Re-encoding through GD is what
+ * drops the EXIF (GPS, device model) since GD writes none of it back.
  *
- * Output is always WebP on the private 'local' disk (storage/app/private),
- * which has no URL and no symlink into public/.
+ * Stored on the private disk, which has no URL and no symlink into public/.
  */
 class PhotoStorage
 {
@@ -35,8 +32,7 @@ class PhotoStorage
         $image = @imagecreatefromstring((string) file_get_contents($file->getRealPath()));
 
         if ($image === false) {
-            // Reached only if something slips past validation — HEIC/HEIF being
-            // the realistic case, which GD cannot decode.
+            // GD cannot decode HEIC/HEIF, which is what normally lands here.
             throw new RuntimeException('Unsupported image format.');
         }
 
@@ -60,10 +56,8 @@ class PhotoStorage
 
         $path = self::DIRECTORY.'/'.$uuid.'.webp';
 
-        // put() returns false on failure and the 'local' disk is configured with
-        // 'throw' => false, so a full disk or a permissions problem produces no
-        // exception at all. Unchecked, the caller stores a photo_path pointing
-        // at a file that was never written.
+        // The disk is configured with 'throw' => false, so a failed write just
+        // returns false. Unchecked, we would store a path to a missing file.
         if (Storage::disk(self::DISK)->put($path, $binary) === false) {
             throw new RuntimeException(sprintf(
                 'Write failed: disk "%s", path "%s", %d bytes. Free space: %s.',
@@ -77,7 +71,7 @@ class PhotoStorage
         return $path;
     }
 
-    /** Human-readable free space on the disk's root, for failure diagnostics. */
+    /** Free space on the disk root, for the failure message. */
     protected function freeSpace(): string
     {
         $bytes = @disk_free_space(storage_path('app/private'));
@@ -93,8 +87,7 @@ class PhotoStorage
     }
 
     /**
-     * EXIF only exists on JPEG/TIFF, and only when the extension is loaded.
-     * Anything else is already upright.
+     * EXIF only exists on JPEG/TIFF. Anything else is already upright.
      *
      * @param  \GdImage  $image
      * @return \GdImage
@@ -108,7 +101,7 @@ class PhotoStorage
         $exif = @exif_read_data($file->getRealPath());
         $orientation = (int) ($exif['Orientation'] ?? 1);
 
-        // imagerotate() turns counter-clockwise, so the angles are negated.
+        // imagerotate() turns counter-clockwise, hence the negated angles.
         $rotate = match ($orientation) {
             3, 4 => 180,
             5, 6 => -90,
@@ -152,9 +145,8 @@ class PhotoStorage
         $ratio = self::MAX_EDGE / $longest;
         $target = [(int) round($width * $ratio), (int) round($height * $ratio)];
 
-        // imagecopyresampled rather than imagescale(): imagescale() with
-        // IMG_BICUBIC returns false on some rotated truecolor images, and a
-        // silent fallback there means full-size originals get stored.
+        // imagescale() with IMG_BICUBIC returns false on some rotated
+        // truecolor images, which would silently store the full-size original.
         $scaled = imagecreatetruecolor($target[0], $target[1]);
 
         imagealphablending($scaled, false);

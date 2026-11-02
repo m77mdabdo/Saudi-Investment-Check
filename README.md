@@ -1,17 +1,133 @@
-# Saudi-Ready Check — Creative Mark 🇸🇦
+<div align="center">
 
-A mobile-first **Saudi market readiness assessment + lead generation + mini CRM** built for
-Creative Mark and the **TECHNE — Alexandria 2026** event.
+# Saudi-Ready Check
 
-A visitor scans a QR code, answers 8 tap-only questions in under a minute, leaves their
-contact details, and gets a scored readiness result. The sales team sees the lead — with its
-source, score, classification and answers — in the console immediately.
+**Event registration, market-readiness assessment and a small CRM — in one bilingual Laravel app.**
+
+Built for Creative Mark and the **TECHNE — Alexandria 2026** event.
+
+[![Laravel](https://img.shields.io/badge/Laravel-12-FF2D20?logo=laravel&logoColor=white)](https://laravel.com)
+[![PHP](https://img.shields.io/badge/PHP-8.2%2B-777BB4?logo=php&logoColor=white)](https://php.net)
+[![Tailwind](https://img.shields.io/badge/Tailwind-4-38BDF8?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+[![Alpine.js](https://img.shields.io/badge/Alpine.js-3-8BC0D0?logo=alpinedotjs&logoColor=white)](https://alpinejs.dev)
+[![Tests](https://img.shields.io/badge/tests-175%20passing-22C55E)](#testing)
+[![RTL](https://img.shields.io/badge/i18n-AR%20%2B%20EN-d9a742)](#localisation)
+
+<img src="docs/screenshots/01-portal-start.webp" alt="The portal section that opens the site" width="100%">
+
+</div>
+
+---
+
+## What it is
+
+A visitor at a stand scans a QR code and lands on a scroll-driven opening sequence. The artwork
+zooms into the Kingdom Centre's aperture, washes to white, and dissolves straight into a four-field
+registration form. Name and phone are required; email and photo are optional. The sales team sees
+the registration in the console immediately and gets an email about it.
+
+The same codebase still serves the original **8-question readiness assessment** at `/quiz`, which
+scores a visitor server-side and classifies them as a lead.
 
 ```
-QR ▸ Landing ▸ 8 questions ▸ Lead form ▸ Server-side score ▸ Result + CTA
-                                                   │
-                                     Email alert + dashboard notification
+QR  ▸  Portal transition  ▸  Registration form  ▸  Confirmation
+                                      │
+                         private photo · sales email · CRM row
 ```
+
+Everything is bilingual: Arabic is the default on un-prefixed URLs, English lives under `/en`,
+and the whole interface mirrors for RTL.
+
+---
+
+## Screenshots
+
+| The opening transition | Dissolving into the form |
+| --- | --- |
+| <img src="docs/screenshots/01-portal-start.webp" width="420"> | <img src="docs/screenshots/02-portal-dissolve.webp" width="420"> |
+
+| Registration · Arabic (RTL) | Registration · English (LTR) |
+| --- | --- |
+| <img src="docs/screenshots/04-form-mobile-ar.webp" width="260"> | <img src="docs/screenshots/05-form-mobile-en.webp" width="260"> |
+
+| Confirmation | Validation, where you can see it |
+| --- | --- |
+| <img src="docs/screenshots/06-confirmation.webp" width="260"> | <img src="docs/screenshots/07-validation.webp" width="260"> |
+
+---
+
+## Architecture
+
+```mermaid
+flowchart LR
+    V([Visitor]) -->|QR| R[Localised routes<br/>/ · /en]
+    R --> PC[Public controllers]
+
+    subgraph CMS[CMS layer]
+        direction TB
+        LP[Landing content]
+        NT[Email templates]
+        ST[Settings]
+        EV[Events & QR sources]
+    end
+
+    ADM([Admin console]) -.->|edit| CMS
+    CMS --> VIEW[Blade + Tailwind + Alpine]
+    PC --> VIEW
+
+    PC --> SVC
+    subgraph SVC[Services]
+        direction TB
+        VC[VisitorContext<br/>attribution]
+        PS[PhotoStorage<br/>EXIF · resize · WebP]
+        SC[ScoringService]
+        NS[NotificationService]
+    end
+
+    PS --> DISK[(Private disk<br/>no public URL)]
+    SVC --> DB[(MySQL)]
+    NS -->|after response| MAIL[[SMTP]]
+    NS --> LOGS[(notification_logs)]
+
+    ADM --> DB
+    ADM -->|auth-gated route| DISK
+    ADM --> XLS[CSV / Excel export]
+```
+
+- **Thin controllers.** Request validation lives in form requests; the work lives in services.
+- **Photos never touch the public disk.** They are stored under `storage/app/private`, which has no
+  URL and no symlink into `public/`. The only way to read one is an authenticated admin route that
+  streams the bytes.
+- **Mail runs after the response.** The sales alert is internal, so the visitor does not wait for the
+  SMTP round-trip. Failures still land in `notification_logs`.
+- **Nothing is queued.** No worker, no cron, no Redis. Shared hosting runs this as-is.
+
+---
+
+## Features
+
+### The registration flow
+
+| | |
+| --- | --- |
+| **Scroll-driven portal** | A sticky stage, scroll-linked zoom and a white wash, driven by CSS custom properties written from plain JS. No animation library. Honours `prefers-reduced-motion`. |
+| **Four fields, two required** | Name and phone. Email and photo are optional and say so. |
+| **Phone normalisation** | A searchable country selector over 93 dial codes; numbers are normalised to E.164 server-side. |
+| **Camera or gallery** | `accept="image/*"` with no `capture` attribute, so the OS offers both instead of forcing the camera. |
+| **HEIC handling** | iPhone photos are converted to JPEG in the browser where the browser can decode them, and are never allowed to fail the registration if they cannot be. |
+| **Photo pipeline** | EXIF orientation applied, then all metadata stripped (GPS included), downscaled to 1600px, stored as WebP at ~206 KB. |
+| **A photo problem never costs a registration** | Rejected or unwritable photos save the row with `photo_path` null, log the reason, and tell the visitor. |
+
+### The assessment flow
+
+8 tap-only questions, server-side scoring, a classified result, and a lead record with its source,
+UTM attribution, device and full answer breakdown.
+
+### The console
+
+Leads and registrations with filters and sorting, photo thumbnails behind authentication, CSV and
+Excel export, an editable CMS for the public copy, email templates with live preview, QR source
+management with scan counts, an analytics funnel, and role-based permissions.
 
 ---
 
@@ -19,15 +135,14 @@ QR ▸ Landing ▸ 8 questions ▸ Lead form ▸ Server-side score ▸ Result + 
 
 | Layer | Choice |
 | --- | --- |
-| Framework | Laravel 12 (PHP 8.2+) |
-| Frontend | Blade + Tailwind CSS 4 + Alpine.js, built with Vite |
-| Charts | Chart.js (admin only) |
+| Framework | Laravel 12 · PHP 8.2+ |
+| Frontend | Blade · Tailwind CSS 4 · Alpine.js, bundled with Vite |
 | Database | MySQL 8 (SQLite in-memory for tests) |
-| Mail | Laravel Mail over SMTP |
-| Auth | Session auth + optional Google OAuth (Socialite), staff only |
-| Languages | Arabic (default, RTL) + English (`/en`, LTR) via Laravel localization |
-| Export | Laravel Excel (`maatwebsite/excel`) |
-| Imagery | Pexels API, cached in the database, with bundled local fallbacks |
+| Images | GD — EXIF rotate, strip, downscale, WebP |
+| Mail | Laravel Mail over SMTP, sent synchronously after the response |
+| Export | `maatwebsite/excel` |
+| Auth | Session auth, optional Google OAuth for staff |
+| Charts | Chart.js, admin only |
 
 ---
 
@@ -36,221 +151,124 @@ QR ▸ Landing ▸ 8 questions ▸ Lead form ▸ Server-side score ▸ Result + 
 ```bash
 composer install
 npm install
-cp .env.example .env            # then fill in your own values
-php artisan key:generate
 
-php artisan migrate --seed      # prints the generated admin password once
-php artisan storage:link        # event logos are stored on the public disk
-php artisan media:sync          # optional: pull background imagery from Pexels
+cp .env.example .env
+php artisan key:generate            # then fill in your own values
 
-npm run build                   # or: npm run dev
+php artisan migrate --seed
+npm run build
+
 php artisan serve
 ```
 
-* Public journey → `http://localhost:8000`
-* Staff console → `http://localhost:8000/admin`
-
-### Admin account
-
-`db:seed` creates the first administrator from `ADMIN_EMAIL` / `ADMIN_NAME`.
-If `ADMIN_PASSWORD` is empty, a strong password is generated and **printed once** in the
-seeder output — store it in a password manager and rotate it after first login.
-More users are created in **Admin → Users & Roles**.
-
-Roles: `admin` (everything), `manager` (content + leads), `sales` (leads only).
+Arabic is served from `/`, English from `/en`, and the console from `/admin`.
 
 ---
 
-## Environment
-
-Every integration degrades gracefully when its variables are absent.
-
-| Group | Variables | Notes |
-| --- | --- | --- |
-| App | `APP_*`, `DB_*`, `SESSION_*`, `CACHE_STORE`, `QUEUE_CONNECTION` | Standard Laravel |
-| Mail | `MAIL_MAILER`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_ENCRYPTION`, `MAIL_TIMEOUT`, `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME` | Lead + customer emails. Keep **one** `MAIL_*` block — a duplicate key later in `.env` silently wins |
-| Languages | `APP_LOCALE=ar`, `APP_FALLBACK_LOCALE=ar`, `LOCALE_AUTO_DETECT` | Arabic default, English at `/en` |
-| Pexels | `PEXELS_API_KEY`, `PEXELS_CACHE_TTL`, `PEXELS_TIMEOUT` | Missing key → bundled fallback images |
-| Google OAuth | `OAUTH_PROVIDERS`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL`, `GOOGLE_ALLOWED_DOMAINS`, `GOOGLE_AUTO_REGISTER` | Staff sign-in only; hidden when unset |
-| CTA links | `CREATIVE_MARK_WHATSAPP_URL`, `BOOKING_URL`, `CHECKLIST_URL`, `CREATIVE_MARK_PHONE`, `CREATIVE_MARK_EMAIL`, `CREATIVE_MARK_WEBSITE` | Defaults; Admin → Settings overrides them |
-| Notifications | `LEAD_NOTIFY_ADMIN`, `LEAD_NOTIFY_CUSTOMER`, `LEAD_NOTIFY_EMAILS` | Also editable in Settings |
-| Branding | `BRAND_NAME`, `BRAND_TAGLINE`, `BRAND_LOGO` | Drop the logo at `public/images/creative-mark-logo.png` |
-| Hosting | `TRUSTED_PROXIES` | Set to your load balancer's IPs (or `*`) only when the app sits behind one |
-
-**Secrets live in `.env` only.** They are read through `config/services.php`,
-`config/mail.php` and `config/creativemark.php`, never hard-coded, never sent to the browser,
-and `.env` is git-ignored.
-
----
-
-## Languages (Arabic + English)
-
-Arabic is the default and keeps the **original, un-prefixed URLs**, so every QR code and
-indexed link keeps working. English is served from `/en/…`, giving each language its own
-canonical URL for `hreflang`.
-
-```
-/            /quiz            /result/{uuid}      ← Arabic (RTL)
-/en          /en/quiz         /en/result/{uuid}   ← English (LTR)
-/ar/…  → 301 → the Arabic URL
-```
-
-* **Interface strings** live in `lang/ar/*.php` and `lang/en/*.php`
-  (`common`, `home`, `quiz`, `results`, `forms`, `validation`, `emails`, `admin`, `seo`, `errors`).
-* **Editable content** (quiz questions, options, result rules, CMS, sales statuses, email
-  subjects) keeps Arabic in its own columns and English in a `translations` JSON column,
-  through the `HasTranslations` trait — seed or edit it from the admin.
-* The language is resolved by the **URL first**, then the form's hidden `locale` field, then
-  session/cookie. Browser auto-detection is off by default (`LOCALE_AUTO_DETECT`).
-* The switcher (`/language/{locale}?redirect=…`) only ever redirects to same-origin paths.
-* Emails are written in the language the lead used; internal sales alerts follow the
-  `admin_email_locale` setting.
-
----
-
-## Email
-
-Every message is sent **immediately** (no queue worker to depend on) through
-`App\Services\NotificationService`, which writes the outcome to `notification_logs` and can
-never break the visitor's request.
-
-| Message | To | When |
-| --- | --- | --- |
-| `customer_result` | The lead | On submission, if they gave an email and the setting is on |
-| `admin_new_lead` | Sales recipients | On every submission |
-| `lead_status_update` | The lead | When their status reaches one flagged **notify client** |
-| `test` | Anyone you choose | `php artisan email:test` or Admin → Email logs |
-
-Templates are Blade (`resources/views/emails/…`) built on a table-based, inline-CSS layout
-that renders in Gmail, Outlook and Apple Mail, adapts to phones, and flips RTL/LTR with the
-language. Subject lines stay editable per language in Admin → Email templates.
-
-### When mail does not arrive
-
-```bash
-php artisan email:diagnose            # config, settings, live SMTP probe, problems found
-php artisan email:test you@example.com --locale=ar
-```
-
-The same report is on **Admin → Email logs**, together with every message sent, its status,
-the SMTP error when it failed, and a resend button. Common causes it detects: `MAIL_MAILER=log`,
-a stale `bootstrap/cache/config.php`, missing SMTP credentials, notifications switched off,
-no recipients configured, and a host blocking outbound SMTP ports.
-
----
-
-## How scoring works
-
-Six of the eight questions are scored 0/1/2 → **maximum 12 points**. Scoring always happens
-server-side in `App\Services\ScoringService`: the browser only ever submits *option keys*,
-which are validated against the live quiz before any points are read from the database.
-
-| Score | Result | Classification | Tone |
-| --- | --- | --- | --- |
-| 9–12 | READY | Hot Lead | Green |
-| 5–8 | NEEDS PREP | Warm Lead | Amber |
-| 0–4 | EARLY STAGE | Early Lead | Coral |
-
-Bands, copy, bullets and CTAs are rows in `result_rules` — edit them in **Admin → Results**,
-no deployment required.
-
----
-
-## Admin console
-
-| Area | What you can do |
-| --- | --- |
-| **Dashboard** | Overview KPIs, funnel, leads trend, classification, sources, sectors, recent leads, hot-lead follow-up queue |
-| **Leads** | CRM list with filters (date, event, result, status, source, sector, timeline, owner) + search, inline status changes, WhatsApp/call/email actions, Excel export |
-| **Lead detail** | Contact, answers, score, attribution (source/UTM/device), sales status, assignment, internal notes, activity timeline, email log |
-| **Analytics** | Visits → starts → completions → leads → meetings, event counters, devices, sources, sectors |
-| **Quiz** | Build questions and options, scores, "other" free-text options, ordering, activate/deactivate, live preview |
-| **Results** | Score bands, headlines, body, bullets, highlight, CTA labels and URLs, disclaimer; warns about uncovered score gaps |
-| **CMS** | Every public string: hero, description, benefit cards, quiz intro, lead form copy, consent text, footer, SEO |
-| **Media** | Search Pexels per slot, pin an image, auto-refresh, or fall back to the bundled artwork |
-| **Events** | Multiple events, default event, dates, status; every lead belongs to one |
-| **QR Sources** | Create tracked sources, copy their URL, see leads and hot leads per source |
-| **Email templates** | Subject/body with `{{name}}`, `{{company}}`, `{{score}}`, `{{result}}`, `{{classification}}`, `{{source}}`, `{{event}}`, `{{main_question}}`, `{{cta_url}}`… plus send-preview and logs |
-| **Email logs** | Mail health (config + live SMTP probe), every message with status/error, resend, send a test email |
-| **Settings** | CTA links, notification recipients and toggles, sales statuses (incl. *notify client*), integration health |
-| **Users & Roles** | Create staff, change roles, deactivate accounts |
-
-### QR sources
-
-Each source has a slug; both of these carry attribution through the whole journey and land
-on the lead record:
-
-```
-https://your-domain/?source=booth_qr
-https://your-domain/qr/booth_qr
-```
-
-Seeded: `walking_qr`, `booth_qr`, `portfolio_qr`, `vip_qr`, `partner_qr`.
-
----
-
-## Data model
-
-`users`, `events`, `landing_pages`, `quiz_questions`, `quiz_options`, `result_rules`,
-`sales_statuses`, `leads`, `lead_answers`, `lead_notes`, `analytics_events`, `qr_sources`,
-`notification_templates`, `notification_logs`, `admin_notifications`, `settings`,
-`media_assets` — all created by `database/migrations/2026_01_01_000100_create_platform_core_tables.php`
-with foreign keys and indexes on the columns the dashboard filters by.
-
----
-
-## Security
-
-* Server-side scoring; option keys validated against the live quiz
-* CSRF on every form, rate limiting per endpoint (submit, autosave, tracking, login)
-* Honeypot field + one-lead-per-session duplicate protection
-* Result pages open only for the session that created them, or via a signed URL
-* Role-based authorization on every admin route, login throttling, deactivation support
-* IP addresses stored only as a keyed hash; no secrets in HTML, JS or logs
-* Set `APP_DEBUG=false` and `SESSION_SECURE_COOKIE=true` in production
-
----
-
-## Tests
+## Testing
 
 ```bash
 php artisan test
 ```
 
-103 tests covering the public journey, scoring boundaries (12/9/8/5/4/0), validation,
-duplicate submissions, QR/UTM attribution, analytics, media fallbacks, security,
-authorization, every admin workflow, both languages (routing, content, SEO tags, switcher,
-persistence) and the whole email system (delivery, tracking, RTL/LTR rendering, failure
-isolation, diagnostics, permissions).
+175 tests, 789 assertions. The suite runs against SQLite in memory and refuses to start if it is
+pointed anywhere else — a cached config could otherwise aim `RefreshDatabase` at a real database.
+
+Coverage includes the full submit path, both locales, the photo pipeline (rotation, metadata
+stripping, downscale, WebP), rejected and unwritable photos, guest access to a private photo,
+export column contract, rate limiting under a shared venue IP, and SMTP failure leaving the
+registration intact.
+
+---
+
+## Localisation
+
+Arabic is the default locale and keeps the original un-prefixed URLs, so QR codes already in
+circulation keep working. English is served from `/en`, giving each language its own canonical URL
+for `hreflang`.
+
+Interface copy lives in `lang/{ar,en}`. Content the client edits lives in the database and **wins
+over the lang files** — changing a lang file alone will not change a live page for a key that has
+already been stored. `php artisan app:refresh-registration-copy` updates stored copy safely and is
+idempotent.
 
 ---
 
 ## Deployment
 
-**Read [DEPLOYMENT.md](DEPLOYMENT.md) first.** The domain is served from the Laravel project
-root (not from `public/`), so the tracked root `.htaccess` is what keeps the site from
-answering 403 — and what keeps `.env` from being downloadable. `public/build` and the
-`public/storage` symlink are committed on purpose, because the server has no Node step.
-
-Verify any deployment with:
+Built for shared hosting where `symlink()` and `exec()` are unavailable.
 
 ```bash
-./scripts/verify-production.sh https://investment.dareljamila.com
-```
-
-```bash
+php artisan route:clear && php artisan config:clear && php artisan view:clear
+git fetch origin && git reset --hard origin/main
 composer install --no-dev --optimize-autoloader
-npm ci && npm run build
 php artisan migrate --force
-php artisan storage:link
+mkdir -p storage/app/private/registrations && chmod 750 storage/app/private/registrations
 php artisan config:cache && php artisan route:cache && php artisan view:cache
-php artisan media:sync          # optional
-php artisan email:diagnose      # confirm mail works on the server itself
 ```
 
-`php artisan db:seed --class=EnglishContentSeeder` is idempotent and only fills the English
-side of the content — safe to run on production after deploying.
+Caches are cleared **before** the code changes underneath them, and rebuilt after. Compiled assets
+are committed, so the server needs no Node toolchain. `php artisan storage:link` must never be run
+here; the public storage link is created manually.
 
-Point the web root at `public/`, set `APP_ENV=production`, `APP_DEBUG=false`, and run
-`php artisan queue:work` if you switch mail to a queued connection.
-After changing `.env` on a cached deployment, re-run `php artisan config:cache`.
+---
+
+## Roadmap
+
+Honest about what is not built yet.
+
+- [ ] **Data retention.** No expiry or purge exists; registrations persist indefinitely.
+- [ ] **Subject deletion.** Deleting one person and their photo together, rather than row by row.
+- [ ] **Photo access log.** No record of which staff member viewed which photograph.
+- [ ] **Consent on registration.** The assessment form records consent with a timestamp; the
+      registration form only states the purpose.
+- [ ] **Duplicate detection.** The same phone can register repeatedly with no warning.
+- [ ] **Offline tolerance.** A failed submit on poor Wi-Fi relies on browser repopulation only.
+
+---
+
+## Recent changes
+
+<!-- changes:start -->
+
+| Commit | Date | Change |
+| --- | --- | --- |
+| `aebeee7` | 2026-10-01 | fix: never lose a registration to a photo problem; add sales notification |
+| `741abcd` | 2026-10-01 | feat: event registration flow |
+| `a4ba20e` | 2026-09-20 | create new requst |
+| `19c96db` | 2026-09-20 | create new requst |
+| `f4a27cb` | 2026-09-20 | create new requst |
+| `786ab21` | 2026-09-20 | create new requst |
+| `b641dcf` | 2026-09-20 | create new requst |
+| `8a1bbd7` | 2026-09-20 | create new requst |
+| `1076311` | 2026-09-20 | create new requst |
+| `b3bd10f` | 2026-09-20 | create new requst |
+| `ecb3b4a` | 2026-09-20 | create new requst |
+| `63a3905` | 2026-09-17 | fix: harden automatic lead notifications |
+
+<sub>Generated by <code>scripts/sync-readme.sh</code>.</sub>
+<!-- changes:end -->
+
+---
+
+## Project layout
+
+```
+app/
+  Http/Controllers/Public/     landing · quiz · registration
+  Http/Controllers/Admin/      console
+  Services/                    scoring · photos · notifications · attribution
+  Exports/                     Excel and CSV
+resources/
+  views/public/                landing (portal + form) · quiz · result
+  views/admin/                 console
+  css · js                     Tailwind entry and Alpine components
+lang/{ar,en}/                   interface copy
+docs/screenshots/               the images in this file
+```
+
+---
+
+<div align="center">
+<sub>Creative Mark · Creating The Future</sub>
+</div>

@@ -6,15 +6,13 @@ use App\Models\LandingPage;
 use Illuminate\Console\Command;
 
 /**
- * Brings the STORED CMS copy in line with the registration flow.
+ * Brings the stored CMS copy in line with the registration flow.
  *
  * Stored content wins over the lang files (see LandingPage::localizedContent),
- * so the new benefit cards and privacy note shipped in lang/{ar,en}/ do not
- * appear on a site whose landing_pages row still holds the quiz-era text.
+ * so shipping new copy in lang/ alone leaves the live page unchanged.
  *
- * Touches exactly two keys per locale — `benefits` and `footer_note` — and
- * leaves every other key in the row alone. Idempotent: running it twice makes
- * no further change, and it reports "already up to date".
+ * Touches two keys per locale, `benefits` and `footer_note`, and leaves the
+ * rest of the row alone. Idempotent.
  */
 class RefreshRegistrationCopy extends Command
 {

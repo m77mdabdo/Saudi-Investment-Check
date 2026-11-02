@@ -25,9 +25,8 @@ class EventRegistration extends Model
             $registration->uuid ??= (string) Str::uuid();
         });
 
-        // Photo cleanup lives here, not in the controller, so it holds for every
-        // deletion path — a bulk action, a tinker session, a future cascade —
-        // and not only the one admin button that happens to call it today.
+        // Here rather than in the controller so every deletion path cleans up,
+        // not just the admin button.
         static::deleting(function (EventRegistration $registration) {
             app(PhotoStorage::class)->delete($registration->photo_path);
         });

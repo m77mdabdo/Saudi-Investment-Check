@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Folds the README changelog into the commit that was just made.
+#
+# The amend re-fires this hook, so the guard makes the second pass a no-op.
+set -euo pipefail
+
+[ -n "${SYNC_README_RUNNING:-}" ] && exit 0
+export SYNC_README_RUNNING=1
+
+ROOT="$(git rev-parse --show-toplevel)"
+bash "$ROOT/scripts/sync-readme.sh"
+
+if ! git -C "$ROOT" diff --quiet -- README.md; then
+    git -C "$ROOT" add README.md
+    git -C "$ROOT" commit --amend --no-edit --no-verify >/dev/null
+    echo "README changelog folded into $(git -C "$ROOT" rev-parse --short HEAD)"
+fi

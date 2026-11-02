@@ -338,13 +338,10 @@
        scales toward the doorway; a white wash then hands the page over to the
        section below. All animated values are custom properties written by JS,
        so CSS stays declarative and there is a static fallback without JS. */
-    /* The negative bottom margin pulls the hero up so it sits directly BEHIND
-       the pinned stage, already in its final position. That is what removes the
-       dead stretch: without it the stage is an opaque white curtain that has to
-       be scrolled off — a whole extra screen of white — before the hero shows.
-       With it, the stage simply dissolves and the hero is already there.
-       The margin must match the stage height exactly, or the hero lands off by
-       the difference. Reset it in the reduced-motion block. */
+    /* The negative margin pulls the next section up behind the pinned stage so
+       it is already in place when the stage dissolves. Without it the stage has
+       to be scrolled off first, which is a full screen of dead white. Must match
+       the stage height exactly, and is reset under reduced motion. */
     .portal {
         height: 150vh;
         margin-bottom: -100svh;
@@ -360,12 +357,10 @@
         display: grid;
         place-items: center;
         background-color: var(--color-ink-950);
-        /* Paints over the hero, which now overlaps it: the hero is later in the
-           DOM and would otherwise win. */
+        /* Paints over the section below, which is later in the DOM. */
         z-index: 5;
-        /* Required, not cosmetic — the stage's box overlaps the hero even once
-           it is invisible, so without this it would swallow every click and
-           selection in the hero below. Nothing inside the stage is interactive. */
+        /* Required: the stage box still overlaps the form once invisible and
+           would swallow every click. Nothing in the stage is interactive. */
         pointer-events: none;
         /* The handoff: white dissolves to reveal the hero already in place. */
         opacity: calc(1 - var(--reveal, 0));
@@ -441,11 +436,9 @@
         opacity: calc(1 - var(--fade, 0));
     }
 
-    /* Quiet scroll affordance parked at the foot of the stage. It is a hint,
-       not a headline: small, light, widely tracked, and it leaves on the same
-       --fade curve as the line so nothing survives onto the white. The word is
-       English in both locales by design, hence the forced dir/lang in markup;
-       left/right insets rather than logical ones keep it centred either way. */
+    /* Scroll hint at the foot of the stage. Small and lightly tracked, and it
+       fades on the same curve as the line above it. English in both locales,
+       hence the forced dir/lang in the markup. */
     .portal__scroll {
         position: absolute;
         z-index: 2;
@@ -467,11 +460,9 @@
         opacity: calc(1 - var(--fade, 0));
     }
 
-    /* The hint is 10.9px, so AA wants 4.5:1 — which white cannot reach over a
-       pale sunset sky on shadow alone. Same trick as the line above: a radial
-       scrim whose last stop lands exactly on the box edge at zero alpha, so it
-       lifts the word without ever reading as a shape. It inherits the parent's
-       --fade opacity, so it leaves when the hint does. */
+    /* At 10.9px AA wants 4.5:1, which white cannot reach over a pale sky on
+       text-shadow alone. Radial scrim ending at zero alpha on the box edge, so
+       it lifts the word without reading as a shape. */
     .portal__scroll::before {
         content: '';
         position: absolute;
@@ -526,10 +517,8 @@
         }
     }
 
-/* Alpine's x-cloak: elements marked with it must stay hidden until Alpine has
-   initialised. Declared here rather than in a per-page <style> block, because a
-   page that forgets it renders every collapsed dropdown and panel expanded —
-   which is exactly what happened when the registration form moved pages. */
+/* Keeps x-cloak elements hidden until Alpine boots. Declared globally because
+   a page that forgets it renders every collapsed panel expanded. */
 [x-cloak] {
     display: none !important;
 }

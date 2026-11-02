@@ -58,12 +58,8 @@ class NotificationService
     /* ------------------------------------------------- Event registrations */
 
     /**
-     * Runs synchronously inside the submit request, like leadCreated().
-     *
-     * Every step goes through safely(), so a dead SMTP server, a missing
-     * template or an unreachable mail host cannot reach the caller: the row is
-     * already committed by the time this runs and the visitor still gets their
-     * confirmation. Failures land in notification_logs next to the lead mail.
+     * Mirrors leadCreated(). Every step goes through safely(), so a dead SMTP
+     * host cannot reach the caller; failures land in notification_logs.
      */
     public function registrationCreated(EventRegistration $registration): void
     {
@@ -74,7 +70,7 @@ class NotificationService
         }
     }
 
-    /** Internal only — the person who registered is never emailed. */
+    /** Internal only. The person who registered is never emailed. */
     public function sendRegistrationAlert(EventRegistration $registration): bool
     {
         $recipients = $this->adminRecipients();

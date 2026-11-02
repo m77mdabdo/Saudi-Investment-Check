@@ -12,12 +12,10 @@ use Illuminate\View\View;
 /**
  * Landing-page content editor.
  *
- * IMPORTANT — stored CMS content wins over the lang files. Anything saved here
- * is read back by LandingPage::localizedContent() and used in place of the
- * __('home.*') default, so changing a lang file alone will NOT change the live
- * page for any key an admin (or a seeder) has already stored. To ship a copy
- * change you must update the stored value too — see
- * `php artisan app:refresh-registration-copy` for how that is done safely.
+ * Note that stored content wins over the lang files: anything saved here is
+ * read back by LandingPage::localizedContent() in place of the __('home.*')
+ * default, so shipping a copy change in lang/ alone leaves the live page as it
+ * was. See `php artisan app:refresh-registration-copy`.
  */
 class CmsController extends Controller
 {
