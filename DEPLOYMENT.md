@@ -1,9 +1,9 @@
 # Deployment — GitHub → Hostinger
 
-> **بالعربي باختصار:** الدومين بيُخدَم من جذر المشروع (`public_html/`) مش من `public/`.
-> ملف `.htaccess` الجذري هو اللي بيوجّه كل الطلبات لـ `public/` — وبقى الآن **داخل الريبو**
-> عشان ما يضيعش مع أي `git pull` أو clone جديد. الأصول المبنية (`public/build`) ورابط
-> `public/storage` كمان بقوا داخل الريبو. بعد كل نشر شغّل `scripts/verify-production.sh`.
+> **In short:** the domain is served from the project root (`public_html/`), not from `public/`.
+> The root `.htaccess` routes every request into `public/`, and it now lives **inside the repo**
+> so it is not lost on a `git pull` or a fresh clone. The built assets (`public/build`) and the
+> `public/storage` link are in the repo too. After every deploy, run `scripts/verify-production.sh`.
 
 ---
 
